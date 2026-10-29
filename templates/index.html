@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aventura do Clima</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='estilo.css') }}">
+</head>
+<body>
+  {# Folhas decorativas nos cantos; aria-hidden esconde dos leitores de tela #}
+  <div class="folhas" aria-hidden="true">
+    <span class="folha f1">🌿</span><span class="folha f2">🍃</span>
+    <span class="folha f3">🌴</span><span class="folha f4">🌿</span>
+  </div>
+
+  {% if chuva %}<div class="chuva" aria-hidden="true"></div>{% endif %}
+
+  <main class="tabuleiro">
+    <div class="cipo" aria-hidden="true"></div>
+
+    <header>
+      <p class="subtitulo">✦ Um jogo para quem busca o tempo ✦</p>
+      <h1>Aventura do Clima</h1>
+    </header>
+
+    <form method="post" class="busca">
+      <label for="cidade" class="sr-only">Cidade</label>
+      <input id="cidade" name="cidade" type="text" placeholder="Para qual cidade você quer ir?"
+             value="{{ busca or '' }}" autocomplete="off" autofocus>
+      <button type="submit">🎲 Lançar os dados</button>
+    </form>
+
+    {% if erro %}
+      <p class="erro">{{ erro }}</p>
+    {% endif %}
+
+    {% if clima %}
+      <section class="resultado">
+        <p class="local">📍 {{ local }}</p>
+
+        <div class="medalhao">
+          <span class="medalhao-icone">{{ icone }}</span>
+          <span class="medalhao-texto">{{ descricao }}</span>
+        </div>
+
+        <div class="pedras">
+          <div class="pedra">
+            <span class="pedra-rotulo">🌡️ Temperatura</span>
+            <span class="pedra-valor">{{ "%.1f"|format(clima.temperature_2m) }} °C</span>
+          </div>
+          <div class="pedra">
+            <span class="pedra-rotulo">🔥 Sensação</span>
+            <span class="pedra-valor">{{ "%.1f"|format(clima.apparent_temperature) }} °C</span>
+          </div>
+          <div class="pedra">
+            <span class="pedra-rotulo">💧 Umidade</span>
+            <span class="pedra-valor">{{ clima.relative_humidity_2m }} %</span>
+          </div>
+          <div class="pedra">
+            <span class="pedra-rotulo">💨 Vento</span>
+            <span class="pedra-valor">{{ "%.1f"|format(clima.wind_speed_10m) }} km/h</span>
+          </div>
+        </div>
+      </section>
+    {% endif %}
+
+    <footer>Dados do tempo: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a></footer>
+  </main>
+</body>
+</html>
