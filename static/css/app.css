@@ -144,7 +144,6 @@ small { font-size: .8em; }
   font-size: 11px; font-weight: 600; letter-spacing: .02em;
   background: var(--primaria-suave); color: var(--primaria);
 }
-.selo-demo { background: var(--atencao-fundo); color: var(--atencao); }
 
 .topo {
   position: sticky; top: 0; z-index: 50;
