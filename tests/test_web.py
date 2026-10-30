@@ -62,3 +62,28 @@ def test_sem_internet(monkeypatch):
     resposta = cliente().get("/api/previsao?lat=-3.1&lon=-60")
     assert resposta.status_code == 502
     assert "internet" in resposta.json["erro"]
+
+
+def erro_http(status, motivo):
+    resposta = requests.Response()
+    resposta.status_code = status
+    resposta._content = ('{"error": true, "reason": "%s"}' % motivo).encode()
+    return requests.HTTPError(response=resposta)
+
+
+def test_limite_de_consultas(monkeypatch):
+    def falhar(lat, lon):
+        raise erro_http(429, "Daily API request limit exceeded")
+
+    monkeypatch.setattr(web, "buscar_previsao", falhar)
+    dados = cliente().get("/api/previsao?lat=-3.1&lon=-60").json
+    assert "limite" in dados["erro"]
+    assert "Daily API request limit exceeded" in dados["detalhe"]
+
+
+def test_demora_para_responder(monkeypatch):
+    def falhar(lat, lon):
+        raise requests.Timeout()
+
+    monkeypatch.setattr(web, "buscar_previsao", falhar)
+    assert "demorou" in cliente().get("/api/previsao?lat=-3.1&lon=-60").json["erro"]

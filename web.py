@@ -7,6 +7,34 @@ from painel import montar_painel
 app = Flask(__name__)
 
 ERRO_CONEXAO = "Não foi possível falar com o serviço de meteorologia. Verifique sua internet."
+ERRO_DEMORA = "O serviço de meteorologia demorou demais para responder. Tente de novo em instantes."
+ERRO_LIMITE = "O limite de consultas ao serviço de meteorologia foi atingido. Tente de novo mais tarde."
+ERRO_RECUSADO = "O serviço de meteorologia recusou o pedido."
+
+
+def responder_erro_api(erro):
+    resposta = getattr(erro, "response", None)
+    status = resposta.status_code if resposta is not None else None
+    motivo = ""
+    if resposta is not None:
+        try:
+            motivo = resposta.json().get("reason", "")
+        except ValueError:
+            motivo = resposta.text[:200]
+
+    app.logger.warning("Falha ao consultar a Open-Meteo: %s status=%s motivo=%s", type(erro).__name__, status, motivo)
+
+    if isinstance(erro, requests.Timeout):
+        mensagem = ERRO_DEMORA
+    elif status == 429:
+        mensagem = ERRO_LIMITE
+    elif status is not None:
+        mensagem = f"{ERRO_RECUSADO} (código {status})"
+    else:
+        mensagem = ERRO_CONEXAO
+
+    detalhe = f"{type(erro).__name__}" + (f" {status}" if status else "") + (f": {motivo}" if motivo else "")
+    return jsonify({"erro": mensagem, "detalhe": detalhe}), 502
 
 
 @app.get("/")
@@ -21,8 +49,8 @@ def api_cidades():
         return jsonify([])
     try:
         return jsonify(buscar_cidades(termo))
-    except requests.RequestException:
-        return jsonify({"erro": ERRO_CONEXAO}), 502
+    except requests.RequestException as erro:
+        return responder_erro_api(erro)
 
 
 @app.get("/api/previsao")
@@ -45,12 +73,13 @@ def api_previsao():
 
     try:
         previsao = buscar_previsao(latitude, longitude)
-    except requests.RequestException:
-        return jsonify({"erro": ERRO_CONEXAO}), 502
+    except requests.RequestException as erro:
+        return responder_erro_api(erro)
 
     try:
         ar = buscar_qualidade_ar(latitude, longitude)
-    except requests.RequestException:
+    except requests.RequestException as erro:
+        app.logger.warning("Qualidade do ar indisponível: %s", type(erro).__name__)
         ar = None
 
     return jsonify(montar_painel(local, previsao, ar))

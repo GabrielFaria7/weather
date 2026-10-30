@@ -7,7 +7,10 @@ async function pedir(url, { signal } = {}) {
     throw new Error("Sem conexão com o servidor. Verifique sua internet ou se o web.py está rodando.");
   }
   const dados = await resposta.json().catch(() => ({}));
-  if (!resposta.ok) throw new Error(dados.erro || "Algo deu errado ao buscar a previsão.");
+  if (!resposta.ok) {
+    const mensagem = dados.erro || `Algo deu errado ao buscar a previsão (código ${resposta.status}).`;
+    throw new Error(dados.detalhe ? `${mensagem} Detalhe: ${dados.detalhe}` : mensagem);
+  }
   return dados;
 }
 
