@@ -59,11 +59,12 @@ Depois, abra http://127.0.0.1:5000 no navegador.
 
 O painel web tem: clima atual, previsão por hora com gráfico, 10 dias (clique em um dia para ver
 detalhes), indicadores (UV, pressão, visibilidade, sol...), qualidade do ar, alertas automáticos,
-mapa com vento animado, cidades favoritas, °C/°F, modo claro/escuro e localização atual.
+mapa com vento e nuvens animados, cidades favoritas, °C/°F, modo claro/escuro e localização atual.
 
 > Os **alertas** são calculados a partir da previsão e **não são oficiais**.
-> No **mapa**, a camada **Vento** mostra a previsão da Open-Meteo animada (não é medição em tempo real).
-> As outras camadas (radar, nuvens...) ainda são demonstrativas: não há fonte de dados integrada.
+> No **mapa**, a camada **Vento** mostra a previsão da Open-Meteo animada (não é medição em tempo real) e a
+> camada **Nuvens** mostra imagens reais do satélite GOES (NOAA, via NASA GIBS) das últimas 2 horas, só nas Américas.
+> As outras camadas (radar, temperatura, precipitação) ainda são demonstrativas: não há fonte de dados integrada.
 
 ## Publicar no Render
 

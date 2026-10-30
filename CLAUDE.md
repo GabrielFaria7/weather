@@ -31,11 +31,17 @@ pytest                                         # testes (pytest.ini já ajusta o
   Por isso o navegador de cada visitante faz as consultas (a Open-Meteo libera CORS).
 - **Alertas são automáticos, não oficiais.** `avisos.py` calcula a partir da previsão e a interface
   deixa isso claro, com link para o INMET. Nunca apresentar como alerta oficial.
-- **Camadas do mapa (radar, nuvens...) são demonstrativas**, exceto **Vento**. Não simular dados de radar.
+- **Camadas do mapa (radar, temperatura, precipitação) são demonstrativas**, exceto **Vento** e **Nuvens**.
+  Não simular dados de radar.
 - **Vento animado:** `buscarVentoGrade` (`servico.js`) pede à Open-Meteo, pelo navegador, uma grade de
   13 × 13 pontos (±3°, passo 0,5°) para as próximas 24 h, só quando o usuário liga a camada (cache de 30 min).
   `mapa.js` converte velocidade/direção em u/v e desenha com `leaflet-velocity@1.9.2` (última versão MIT;
   a 2.x mudou de licença). A interface diz que é previsão do modelo, não medição em tempo real.
+- **Nuvens animadas:** imagens reais GeoColor dos satélites GOES-East/GOES-West pela NASA GIBS (grátis, sem
+  chave, com CORS). `buscarHorariosSatelite` (`servico.js`) lê os horários disponíveis (DescribeDomains) e usa os
+  12 últimos (2 h, a cada 10 min, com ~1 h de atraso). `mapa.js` cria uma `L.gridLayer` por horário num painel
+  próprio (`nuvens`, fora do `.leaflet-tile-pane`, que recebe o filtro de escurecer o mapa) e transforma o brilho
+  de cada pixel em transparência, para sobrar só as nuvens. Fora das Américas mostra aviso de sem cobertura.
 - `.container` usa `padding-inline` (não `padding`), senão zera o espaço vertical do `<main>`.
 - A linha superior do cabeçalho tem `z-index` para as sugestões da busca abrirem por cima das abas.
 

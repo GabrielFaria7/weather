@@ -5,6 +5,10 @@ const TEMPO_LIMITE_MS = 10000;
 const PASSO_GRADE_VENTO = 0.5;
 const RAIO_GRADE_VENTO = 3;
 const HORAS_VENTO = 24;
+const URL_GIBS = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best";
+const MATRIZ_SATELITE = "GoogleMapsCompatible_Level7";
+const QUADROS_SATELITE = 12;
+const JANELA_SATELITE_MS = 4 * 60 * 60 * 1000;
 
 const PARAMETROS_PREVISAO = {
   timezone: "auto",
@@ -107,6 +111,45 @@ export async function buscarVentoGrade(local, opcoes) {
     deslocamento: lista[0].utc_offset_seconds ?? 0,
     pontos: lista.map((r) => ({ velocidade: r.hourly.wind_speed_10m, direcao: r.hourly.wind_direction_10m })),
   };
+}
+
+const isoSatelite = (data) => data.toISOString().replace(/\.\d{3}Z$/, "Z");
+
+function expandirHorarios(dominio) {
+  return dominio.split(",").flatMap((trecho) => {
+    const [inicio, fim, periodo] = trecho.trim().split("/");
+    if (!fim) return [inicio];
+    const passo = Number(/PT(\d+)M/.exec(periodo ?? "")?.[1] ?? 10) * 60000;
+    const horarios = [];
+    for (let t = Date.parse(inicio); t <= Date.parse(fim); t += passo) horarios.push(isoSatelite(new Date(t)));
+    return horarios;
+  });
+}
+
+export async function buscarHorariosSatelite(satelite, { signal } = {}) {
+  const camada = `${satelite}_ABI_GeoColor`;
+  const fim = new Date();
+  const inicio = new Date(fim.getTime() - JANELA_SATELITE_MS);
+  const url = `${URL_GIBS}/1.0.0/${camada}/default/${MATRIZ_SATELITE}/all/${isoSatelite(inicio)}--${isoSatelite(fim)}.xml`;
+
+  let texto;
+  try {
+    const resposta = await fetch(url, { signal: sinalComLimite(signal) });
+    if (!resposta.ok) throw new Error(String(resposta.status));
+    texto = await resposta.text();
+  } catch (erro) {
+    if (signal?.aborted) throw erro;
+    throw new Error("Não foi possível obter as imagens de satélite agora. Tente de novo em instantes.");
+  }
+
+  const dominio = /<Domain>([^<]*)<\/Domain>/.exec(texto)?.[1] ?? "";
+  const horarios = dominio ? expandirHorarios(dominio).slice(-QUADROS_SATELITE) : [];
+  if (!horarios.length) throw new Error("Não há imagens de satélite recentes para esta região.");
+  return { camada, horarios };
+}
+
+export function urlTileSatelite(camada, horario) {
+  return `${URL_GIBS}/${camada}/default/${horario}/${MATRIZ_SATELITE}/{z}/{y}/{x}.png`;
 }
 
 export async function buscarPrevisao(local, opcoes) {

@@ -95,6 +95,17 @@ export function minutosAgoraNaCidade(fuso) {
   }
 }
 
+export function horaNaCidade(data, fuso, formato = "24") {
+  try {
+    const horario = new Intl.DateTimeFormat("en-GB", {
+      hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: fuso,
+    }).format(data);
+    return hora(`0000-00-00T${horario}`, formato);
+  } catch {
+    return "—";
+  }
+}
+
 export function duracao(minutos) {
   const h = Math.floor(minutos / 60);
   const m = Math.round(minutos % 60);
