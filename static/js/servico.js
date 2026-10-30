@@ -9,8 +9,6 @@ const URL_GIBS = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best";
 const MATRIZ_SATELITE = "GoogleMapsCompatible_Level7";
 const QUADROS_SATELITE = 12;
 const JANELA_SATELITE_MS = 4 * 60 * 60 * 1000;
-const URL_RADAR = "https://api.rainviewer.com/public/weather-maps.json";
-export const URL_COBERTURA_RADAR = "https://tilecache.rainviewer.com/v2/coverage/0/256/{z}/{x}/{y}/0/0_0.png";
 
 const PARAMETROS_PREVISAO = {
   timezone: "auto",
@@ -82,7 +80,7 @@ export async function buscarCidades(termo, opcoes) {
 const normalizarLongitude = (longitude) => ((longitude + 540) % 360) - 180;
 const arredondar = (valor) => Number(valor.toFixed(2));
 
-export async function buscarGradeMapa(local, opcoes) {
+export async function buscarVentoGrade(local, opcoes) {
   const lado = Math.round((2 * RAIO_GRADE_VENTO) / PASSO_GRADE_VENTO) + 1;
   const norte = Math.min(85, Math.max(-85 + 2 * RAIO_GRADE_VENTO, local.latitude + RAIO_GRADE_VENTO));
   const oeste = local.longitude - RAIO_GRADE_VENTO;
@@ -100,7 +98,7 @@ export async function buscarGradeMapa(local, opcoes) {
   const respostas = await pedirOpenMeteo(URL_PREVISAO, {
     latitude: latitudes.join(","),
     longitude: longitudes.join(","),
-    hourly: "wind_speed_10m,wind_direction_10m,temperature_2m,precipitation",
+    hourly: "wind_speed_10m,wind_direction_10m",
     forecast_hours: HORAS_VENTO,
     timeformat: "unixtime",
     timezone: "auto",
@@ -111,24 +109,8 @@ export async function buscarGradeMapa(local, opcoes) {
     grade,
     horas: lista[0].hourly.time,
     deslocamento: lista[0].utc_offset_seconds ?? 0,
-    pontos: lista.map((r) => ({
-      velocidade: r.hourly.wind_speed_10m,
-      direcao: r.hourly.wind_direction_10m,
-      temperatura: r.hourly.temperature_2m,
-      precipitacao: r.hourly.precipitation,
-    })),
+    pontos: lista.map((r) => ({ velocidade: r.hourly.wind_speed_10m, direcao: r.hourly.wind_direction_10m })),
   };
-}
-
-async function pedirImagens(url, signal, fonte, ler) {
-  try {
-    const resposta = await fetch(url, { signal: sinalComLimite(signal) });
-    if (!resposta.ok) throw new Error(String(resposta.status));
-    return await ler(resposta);
-  } catch (erro) {
-    if (signal?.aborted) throw erro;
-    throw new Error(`Não foi possível obter as imagens de ${fonte} agora. Tente de novo em instantes.`);
-  }
 }
 
 const isoSatelite = (data) => data.toISOString().replace(/\.\d{3}Z$/, "Z");
@@ -150,7 +132,16 @@ export async function buscarHorariosSatelite(satelite, { signal } = {}) {
   const inicio = new Date(fim.getTime() - JANELA_SATELITE_MS);
   const url = `${URL_GIBS}/1.0.0/${camada}/default/${MATRIZ_SATELITE}/all/${isoSatelite(inicio)}--${isoSatelite(fim)}.xml`;
 
-  const texto = await pedirImagens(url, signal, "satélite", (r) => r.text());
+  let texto;
+  try {
+    const resposta = await fetch(url, { signal: sinalComLimite(signal) });
+    if (!resposta.ok) throw new Error(String(resposta.status));
+    texto = await resposta.text();
+  } catch (erro) {
+    if (signal?.aborted) throw erro;
+    throw new Error("Não foi possível obter as imagens de satélite agora. Tente de novo em instantes.");
+  }
+
   const dominio = /<Domain>([^<]*)<\/Domain>/.exec(texto)?.[1] ?? "";
   const horarios = dominio ? expandirHorarios(dominio).slice(-QUADROS_SATELITE) : [];
   if (!horarios.length) throw new Error("Não há imagens de satélite recentes para esta região.");
@@ -159,16 +150,6 @@ export async function buscarHorariosSatelite(satelite, { signal } = {}) {
 
 export function urlTileSatelite(camada, horario) {
   return `${URL_GIBS}/${camada}/default/${horario}/${MATRIZ_SATELITE}/{z}/{y}/{x}.png`;
-}
-
-export async function buscarQuadrosRadar({ signal } = {}) {
-  const dados = await pedirImagens(URL_RADAR, signal, "radar", (r) => r.json());
-  const quadros = dados.radar?.past ?? [];
-  if (!dados.host || !quadros.length) throw new Error("Não há imagens de radar recentes no momento.");
-  return {
-    horarios: quadros.map((q) => q.time * 1000),
-    urls: quadros.map((q) => `${dados.host}${q.path}/256/{z}/{x}/{y}/2/1_1.png`),
-  };
 }
 
 export async function buscarPrevisao(local, opcoes) {

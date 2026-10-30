@@ -31,22 +31,17 @@ pytest                                         # testes (pytest.ini já ajusta o
   Por isso o navegador de cada visitante faz as consultas (a Open-Meteo libera CORS).
 - **Alertas são automáticos, não oficiais.** `avisos.py` calcula a partir da previsão e a interface
   deixa isso claro, com link para o INMET. Nunca apresentar como alerta oficial.
-- **Todas as camadas do mapa usam dados reais.** Nunca simular dados (principalmente de radar).
-- **Grade de previsão (Temperatura, Vento, Precipitação):** `buscarGradeMapa` (`servico.js`) pede à Open-Meteo,
-  pelo navegador, uma grade de 13 × 13 pontos (±3°, passo 0,5°) com vento, temperatura e chuva das próximas 24 h,
-  numa única consulta, só quando o usuário liga uma dessas camadas (cache de 30 min, compartilhado entre as três).
-  O vento: `mapa.js` converte velocidade/direção em u/v e desenha com `leaflet-velocity@1.9.2` (última versão MIT;
-  a 2.x mudou de licença). Temperatura e precipitação: `imagemGrade` interpola os pontos (bilinear, em projeção
-  Mercator) num canvas e mostra como `L.imageOverlay`. A interface diz que é previsão do modelo, não medição.
-- **Radar de chuva:** RainViewer (grátis, sem chave, com CORS). `buscarQuadrosRadar` lê
-  `api.rainviewer.com/public/weather-maps.json` (13 quadros, 2 h, a cada 10 min). A API gratuita só tem zoom nativo
-  até 7 e um único esquema de cores (2, Universal Blue). A máscara de cobertura (`URL_COBERTURA_RADAR`) escurece onde
-  não há radar, e `radarCobre` lê o pixel da cidade nela para avisar quando a cidade está fora da cobertura.
+- **O mapa tem só as camadas Nuvens e Vento**, ambas com dados reais. Radar de chuva, Temperatura e Precipitação
+  já foram integradas (RainViewer e grade da Open-Meteo) e removidas a pedido, porque o resultado não agradou.
+  Não recolocar sem pedido. Nunca simular dados no mapa.
+- **Vento animado:** `buscarVentoGrade` (`servico.js`) pede à Open-Meteo, pelo navegador, uma grade de
+  13 × 13 pontos (±3°, passo 0,5°) para as próximas 24 h, só quando o usuário liga a camada (cache de 30 min).
+  `mapa.js` converte velocidade/direção em u/v e desenha com `leaflet-velocity@1.9.2` (última versão MIT;
+  a 2.x mudou de licença). A interface diz que é previsão do modelo, não medição em tempo real.
 - **Nuvens animadas:** imagens reais GeoColor dos satélites GOES-East/GOES-West pela NASA GIBS (grátis, sem
   chave, com CORS). `buscarHorariosSatelite` (`servico.js`) lê os horários disponíveis (DescribeDomains) e usa os
   12 últimos (2 h, a cada 10 min, com ~1 h de atraso). `mapa.js` cria uma `L.gridLayer` por horário num painel
-  próprio (`camadas`, fora do `.leaflet-tile-pane`, que recebe o filtro de escurecer o mapa; todas as camadas usam
-  esse painel) e transforma o brilho
+  próprio (`nuvens`, fora do `.leaflet-tile-pane`, que recebe o filtro de escurecer o mapa) e transforma o brilho
   de cada pixel em transparência, para sobrar só as nuvens. Fora das Américas mostra aviso de sem cobertura.
 - `.container` usa `padding-inline` (não `padding`), senão zera o espaço vertical do `<main>`.
 - A linha superior do cabeçalho tem `z-index` para as sugestões da busca abrirem por cima das abas.
