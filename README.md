@@ -75,6 +75,10 @@ O projeto já vem com o arquivo `render.yaml`, que diz ao [Render](https://rende
 A cada `git push` no branch `main`, o Render publica a nova versão sozinho.
 No plano gratuito, o site "dorme" após um tempo sem acessos, e a primeira visita depois disso demora um pouco mais.
 
+Na versão web, quem consulta a Open-Meteo é o **navegador de cada visitante**, e não o servidor.
+Assim cada pessoa usa o próprio limite gratuito da API, em vez de dividir o limite do endereço
+de internet compartilhado da hospedagem.
+
 Para rodar localmente do mesmo jeito que no servidor:
 ```bash
 gunicorn web:app --bind 0.0.0.0:8000
@@ -95,11 +99,11 @@ pytest
 | `interface.py` + `main.py` | App do terminal |
 | `painel.py` | Organiza os dados da API no formato do painel web |
 | `avisos.py` | Calcula os alertas automáticos (chuva, vento, calor, frio) |
-| `web.py` | Servidor Flask: entrega a página e os dados em JSON (`/api/cidades`, `/api/previsao`) |
+| `web.py` | Servidor Flask: entrega a página e monta o painel a partir dos dados enviados pelo navegador (`POST /api/painel`) |
 | `templates/index.html` | Estrutura da página (cabeçalho, abas) |
 | `static/css/app.css` | Visual, temas claro/escuro e responsividade |
 | `static/js/main.js` | Junta tudo: estado da página e eventos |
-| `static/js/servico.js` | Pedidos ao servidor (camada de dados do front) |
+| `static/js/servico.js` | Consulta a Open-Meteo direto do navegador e envia os dados ao servidor (camada de dados do front) |
 | `static/js/componentes/` | Uma parte da tela por arquivo (card atual, por hora, 10 dias, mapa...) |
 
 ## Licença

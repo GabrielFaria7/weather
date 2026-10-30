@@ -1,13 +1,16 @@
-import requests
-
 import web
 from tests.dados_falsos import previsao_falsa
 
+LOCAL = {"nome": "Manaus", "estado": "Amazonas", "pais": "Brasil", "latitude": -3.1, "longitude": -60.0}
 QUALIDADE_AR_FALSA = {"european_aqi": 35, "pm2_5": 10.2, "pm10": 18.0, "ozone": 50.0, "nitrogen_dioxide": 12.0}
 
 
 def cliente():
     return web.app.test_client()
+
+
+def montar(corpo):
+    return cliente().post("/api/painel", json=corpo)
 
 
 def test_pagina_abre():
@@ -16,74 +19,50 @@ def test_pagina_abre():
     assert "<title>Weather</title>" in resposta.text
 
 
-def test_sugestoes_de_cidades(monkeypatch):
-    monkeypatch.setattr(web, "buscar_cidades", lambda termo: [{"nome": "Recife", "estado": "Pernambuco"}])
-    resposta = cliente().get("/api/cidades?q=rec")
-    assert resposta.json == [{"nome": "Recife", "estado": "Pernambuco"}]
-
-
-def test_sugestoes_ignoram_texto_curto():
-    assert cliente().get("/api/cidades?q=a").json == []
-
-
-def test_previsao_completa(monkeypatch):
-    monkeypatch.setattr(web, "buscar_previsao", lambda lat, lon: previsao_falsa())
-    monkeypatch.setattr(web, "buscar_qualidade_ar", lambda lat, lon: QUALIDADE_AR_FALSA)
-    resposta = cliente().get("/api/previsao?lat=-3.1&lon=-60&nome=Manaus&estado=Amazonas&pais=Brasil")
+def test_painel_completo():
+    resposta = montar({"local": LOCAL, "previsao": previsao_falsa(), "ar": QUALIDADE_AR_FALSA})
     dados = resposta.json
     assert resposta.status_code == 200
     assert dados["local"]["nome"] == "Manaus"
     assert dados["atual"]["descricao"] == "Chuva leve"
+    assert len(dados["por_hora"]) == 24
     assert dados["qualidade_ar"]["nivel"] == "Razoável"
 
 
-def test_previsao_sem_qualidade_do_ar_continua_funcionando(monkeypatch):
-    def falhar(lat, lon):
-        raise requests.ConnectionError()
-
-    monkeypatch.setattr(web, "buscar_previsao", lambda lat, lon: previsao_falsa())
-    monkeypatch.setattr(web, "buscar_qualidade_ar", falhar)
-    resposta = cliente().get("/api/previsao?lat=-3.1&lon=-60")
-    assert resposta.status_code == 200
-    assert resposta.json["qualidade_ar"] is None
-    assert resposta.json["local"]["nome"] == "Sua localização"
+def test_painel_sem_qualidade_do_ar():
+    local = {"latitude": -3.1, "longitude": -60.0}
+    dados = montar({"local": local, "previsao": previsao_falsa(), "ar": None}).json
+    assert dados["qualidade_ar"] is None
+    assert dados["local"]["nome"] == "Sua localização"
 
 
 def test_coordenadas_invalidas():
-    assert cliente().get("/api/previsao?lat=abc&lon=1").status_code == 400
-    assert cliente().get("/api/previsao?lat=200&lon=1").status_code == 400
+    assert montar({"local": {"latitude": "abc", "longitude": 1}, "previsao": previsao_falsa()}).status_code == 400
+    assert montar({"local": {"latitude": 200, "longitude": 1}, "previsao": previsao_falsa()}).status_code == 400
 
 
-def test_sem_internet(monkeypatch):
-    def falhar(lat, lon):
-        raise requests.ConnectionError()
-
-    monkeypatch.setattr(web, "buscar_previsao", falhar)
-    resposta = cliente().get("/api/previsao?lat=-3.1&lon=-60")
-    assert resposta.status_code == 502
-    assert "internet" in resposta.json["erro"]
+def test_sem_json():
+    resposta = cliente().post("/api/painel", data="isso não é json")
+    assert resposta.status_code == 400
+    assert "JSON" in resposta.json["erro"]
 
 
-def erro_http(status, motivo):
-    resposta = requests.Response()
-    resposta.status_code = status
-    resposta._content = ('{"error": true, "reason": "%s"}' % motivo).encode()
-    return requests.HTTPError(response=resposta)
+def test_previsao_incompleta():
+    previsao = previsao_falsa()
+    del previsao["daily"]
+    resposta = montar({"local": LOCAL, "previsao": previsao})
+    assert resposta.status_code == 400
+    assert "incompletos" in resposta.json["erro"]
 
 
-def test_limite_de_consultas(monkeypatch):
-    def falhar(lat, lon):
-        raise erro_http(429, "Daily API request limit exceeded")
-
-    monkeypatch.setattr(web, "buscar_previsao", falhar)
-    dados = cliente().get("/api/previsao?lat=-3.1&lon=-60").json
-    assert "limite" in dados["erro"]
-    assert "Daily API request limit exceeded" in dados["detalhe"]
+def test_previsao_com_formato_inesperado():
+    previsao = previsao_falsa()
+    del previsao["current"]["weather_code"]
+    resposta = montar({"local": LOCAL, "previsao": previsao})
+    assert resposta.status_code == 400
+    assert "formato inesperado" in resposta.json["erro"]
 
 
-def test_demora_para_responder(monkeypatch):
-    def falhar(lat, lon):
-        raise requests.Timeout()
-
-    monkeypatch.setattr(web, "buscar_previsao", falhar)
-    assert "demorou" in cliente().get("/api/previsao?lat=-3.1&lon=-60").json["erro"]
+def test_nome_muito_longo_e_cortado():
+    local = {**LOCAL, "nome": "x" * 500}
+    assert len(montar({"local": local, "previsao": previsao_falsa()}).json["local"]["nome"]) == 100
