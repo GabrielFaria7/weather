@@ -64,6 +64,22 @@ mapa, cidades favoritas, °C/°F, modo claro/escuro e localização atual.
 > Os **alertas** são calculados a partir da previsão e **não são oficiais**.
 > As **camadas do mapa** (radar, nuvens...) são demonstrativas: ainda não há fonte de dados integrada.
 
+## Publicar no Render
+
+O projeto já vem com o arquivo `render.yaml`, que diz ao [Render](https://render.com) como instalar e iniciar o app.
+
+1. Crie uma conta no Render com **Sign in with GitHub**.
+2. Clique em **New → Blueprint** e escolha este repositório.
+3. Confirme em **Apply**. Em poucos minutos o site fica disponível em um endereço `*.onrender.com`.
+
+A cada `git push` no branch `main`, o Render publica a nova versão sozinho.
+No plano gratuito, o site "dorme" após um tempo sem acessos, e a primeira visita depois disso demora um pouco mais.
+
+Para rodar localmente do mesmo jeito que no servidor:
+```bash
+gunicorn web:app --bind 0.0.0.0:8000
+```
+
 ## Testes
 
 ```bash
