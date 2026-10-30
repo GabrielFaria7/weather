@@ -53,3 +53,7 @@ pytest
 | `static/js/main.js` | Junta tudo: estado da página e eventos |
 | `static/js/servico.js` | Pedidos ao servidor (camada de dados do front) |
 | `static/js/componentes/` | Uma parte da tela por arquivo (card atual, por hora, 10 dias, mapa...) |
+
+## Licença
+
+Distribuído sob a licença MIT. Veja o arquivo [LICENSE](LICENSE).
