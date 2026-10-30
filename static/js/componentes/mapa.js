@@ -104,7 +104,7 @@ export function renderizarMapa(el, dados, contexto) {
   mapa.on("mousemove click", (e) => lerVento(e.latlng));
 }
 
-export function selecionarCamada(id) {
+function selecionarCamada(id) {
   const camada = CAMADAS.find((c) => c.id === id);
   if (!camada) return;
 

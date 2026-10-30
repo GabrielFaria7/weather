@@ -6,7 +6,7 @@ import { iniciarBusca } from "./componentes/busca.js";
 import { renderizarAtual } from "./componentes/atual.js";
 import { renderizarPorHora } from "./componentes/porHora.js";
 import { renderizarDias } from "./componentes/dias.js";
-import { ajustarMapa, atualizarMapa, renderizarMapa, selecionarCamada } from "./componentes/mapa.js";
+import { ajustarMapa, atualizarMapa, renderizarMapa } from "./componentes/mapa.js";
 import { renderizarIndicadores } from "./componentes/indicadores.js";
 import { renderizarQualidadeAr } from "./componentes/qualidadeAr.js";
 import { renderizarAlertas } from "./componentes/alertas.js";
@@ -214,7 +214,6 @@ function iniciarAbas() {
       if (!alvo) { e.preventDefault(); return; }
       e.preventDefault();
       alvo.scrollIntoView({ behavior: "smooth", block: "start" });
-      if (aba.dataset.camada) selecionarCamada(aba.dataset.camada);
       ativarAba(aba);
     });
   });
@@ -230,11 +229,10 @@ function observarAbas() {
   observadorAbas = new IntersectionObserver((entradas) => {
     const visivel = entradas.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
     if (!visivel) return;
-    const aba = [...document.querySelectorAll(".aba")]
-      .find((a) => a.getAttribute("href") === `#${visivel.target.id}` && !a.dataset.camada);
+    const aba = [...document.querySelectorAll(".aba")].find((a) => a.getAttribute("href") === `#${visivel.target.id}`);
     if (aba) document.querySelectorAll(".aba").forEach((a) => a.toggleAttribute("aria-current", a === aba));
   }, { rootMargin: "-140px 0px -55% 0px" });
-  ["hoje", "por-hora", "dias", "indicadores", "qualidade-ar", "mapa"].forEach((id) => {
+  ["hoje", "por-hora", "dias", "indicadores", "mapa"].forEach((id) => {
     const secao = document.getElementById(id);
     if (secao) observadorAbas.observe(secao);
   });
