@@ -3,6 +3,38 @@
 Mostra o clima de qualquer cidade usando a API gratuita [Open-Meteo](https://open-meteo.com/) (sem chave).
 Tem duas formas de usar: no terminal e num painel web completo.
 
+## Prints
+
+**Painel web (modo claro)**
+
+![Painel web no modo claro mostrando o clima atual de São Paulo e a previsão por hora](docs/painel-claro.png)
+
+**Painel completo (modo escuro)**
+
+![Painel web no modo escuro com clima atual, previsão por hora, 10 dias, indicadores, qualidade do ar e mapa](docs/painel-escuro.png)
+
+<table>
+  <tr>
+    <td width="35%"><strong>No celular</strong><br><img src="docs/celular.png" alt="Painel no celular, com os cards empilhados"></td>
+    <td><strong>Tela inicial</strong><br><img src="docs/inicio.png" alt="Tela inicial com busca, botão de localização e cidades sugeridas"></td>
+  </tr>
+</table>
+
+**No terminal**
+
+```
+$ python main.py
+☀️  App de Clima (dados: Open-Meteo)
+Digite uma cidade (ou 'sair'): São Paulo
+
+📍 São Paulo, São Paulo - Brasil
+🌡️  Temperatura:      18.6 °C
+🤔 Sensação térmica: 20.6 °C
+💧 Umidade:          95 %
+💨 Vento:            5.2 km/h
+🌦️  Tempo:            Garoa intensa
+```
+
 ## Instalação (Ubuntu)
 
 ```bash
