@@ -85,7 +85,8 @@ button { font: inherit; color: inherit; }
 a { color: var(--primaria); }
 small { font-size: .8em; }
 
-.container { width: 100%; max-width: 1320px; margin: 0 auto; padding: 0 24px; }
+/* Só as laterais: assim não apaga o espaço de cima/baixo de quem também usa .container (ex.: <main>) */
+.container { width: 100%; max-width: 1320px; margin: 0 auto; padding-inline: 24px; }
 
 .ui-icone { width: 1.15em; height: 1.15em; flex: none; }
 
@@ -641,7 +642,7 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 
 /* Celular grande / tablet em pé */
 @media (max-width: 760px) {
-  .container { padding: 0 16px; }
+  .container { padding-inline: 16px; }
   .topo-linha { flex-wrap: wrap; height: auto; padding-top: 10px; padding-bottom: 10px; gap: 10px; }
   .busca { order: 3; flex-basis: 100%; max-width: none; }
   .logo-texto { font-size: 18px; }

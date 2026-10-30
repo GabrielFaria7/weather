@@ -84,6 +84,7 @@ function montarPainel() {
     </div>`;
   renderizarConteudo();
   renderizarMapa(area("mapa"), estado.dados);
+  ativarAba(document.querySelector('.aba[href="#hoje"]')); // O painel sempre abre no topo
   observarAbas();
 }
 
