@@ -3,71 +3,118 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Aventura do Clima</title>
+  <title>Weather</title>
+  <meta name="description" content="Previsão do tempo com dados da Open-Meteo.">
+
+  {# Aplica o tema salvo antes de desenhar a página, para não "piscar" claro no modo escuro #}
+  <script>
+    (function () {
+      var tema = null;
+      try { tema = localStorage.getItem("weather.tema"); } catch (e) {}
+      if (tema !== "claro" && tema !== "escuro") {
+        tema = window.matchMedia("(prefers-color-scheme: dark)").matches ? "escuro" : "claro";
+      }
+      document.documentElement.dataset.theme = tema === "escuro" ? "dark" : "light";
+    })();
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='estilo.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 </head>
 <body>
-  {# Folhas decorativas nos cantos; aria-hidden esconde dos leitores de tela #}
-  <div class="folhas" aria-hidden="true">
-    <span class="folha f1">🌿</span><span class="folha f2">🍃</span>
-    <span class="folha f3">🌴</span><span class="folha f4">🌿</span>
-  </div>
+  <a class="pular" href="#conteudo">Pular para o conteúdo</a>
 
-  {% if chuva %}<div class="chuva" aria-hidden="true"></div>{% endif %}
+  <header class="topo">
+    <div class="topo-linha container">
+      <a class="logo" href="/" aria-label="Weather, página inicial">
+        <svg class="logo-marca" viewBox="0 0 40 40" aria-hidden="true">
+          <defs>
+            <linearGradient id="logo-grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#4A9EFF"/><stop offset="1" stop-color="#1769E0"/>
+            </linearGradient>
+          </defs>
+          <rect width="40" height="40" rx="11" fill="url(#logo-grad)"/>
+          <circle cx="15" cy="15" r="6" fill="#FFB020"/>
+          <path d="M14 30a6 6 0 0 1 .6-12 8 8 0 0 1 15 2.2A5 5 0 0 1 29 30z" fill="#fff"/>
+        </svg>
+        <span class="logo-texto">Weather</span>
+      </a>
 
-  <main class="tabuleiro">
-    <div class="cipo" aria-hidden="true"></div>
+      <form class="busca" id="form-busca" role="search" autocomplete="off">
+        <span class="busca-icone" data-icone="busca" aria-hidden="true"></span>
+        <input id="campo-busca" type="search" placeholder="Buscar cidade" aria-label="Buscar cidade"
+               role="combobox" aria-expanded="false" aria-controls="sugestoes" aria-autocomplete="list">
+        <ul id="sugestoes" class="sugestoes" role="listbox" aria-label="Sugestões de cidades" hidden></ul>
+      </form>
 
-    <header>
-      <p class="subtitulo">✦ Um jogo para quem busca o tempo ✦</p>
-      <h1>Aventura do Clima</h1>
-    </header>
-
-    <form method="post" class="busca">
-      <label for="cidade" class="sr-only">Cidade</label>
-      <input id="cidade" name="cidade" type="text" placeholder="Para qual cidade você quer ir?"
-             value="{{ busca or '' }}" autocomplete="off" autofocus>
-      <button type="submit">🎲 Lançar os dados</button>
-    </form>
-
-    {% if erro %}
-      <p class="erro">{{ erro }}</p>
-    {% endif %}
-
-    {% if clima %}
-      <section class="resultado">
-        <p class="local">📍 {{ local }}</p>
-
-        <div class="medalhao">
-          <span class="medalhao-icone">{{ icone }}</span>
-          <span class="medalhao-texto">{{ descricao }}</span>
+      <div class="acoes">
+        <button id="btn-localizacao" class="btn-icone" type="button" title="Usar minha localização" aria-label="Usar minha localização">
+          <span data-icone="localizacao" aria-hidden="true"></span>
+        </button>
+        <div class="segmentado" role="group" aria-label="Unidade de temperatura">
+          <button type="button" data-unidade="C" aria-pressed="true">°C</button>
+          <button type="button" data-unidade="F" aria-pressed="false">°F</button>
         </div>
-
-        <div class="pedras">
-          <div class="pedra">
-            <span class="pedra-rotulo">🌡️ Temperatura</span>
-            <span class="pedra-valor">{{ "%.1f"|format(clima.temperature_2m) }} °C</span>
-          </div>
-          <div class="pedra">
-            <span class="pedra-rotulo">🔥 Sensação</span>
-            <span class="pedra-valor">{{ "%.1f"|format(clima.apparent_temperature) }} °C</span>
-          </div>
-          <div class="pedra">
-            <span class="pedra-rotulo">💧 Umidade</span>
-            <span class="pedra-valor">{{ clima.relative_humidity_2m }} %</span>
-          </div>
-          <div class="pedra">
-            <span class="pedra-rotulo">💨 Vento</span>
-            <span class="pedra-valor">{{ "%.1f"|format(clima.wind_speed_10m) }} km/h</span>
+        <button id="btn-tema" class="btn-icone" type="button" aria-label="Alternar modo claro ou escuro" title="Modo claro/escuro">
+          <span class="tema-sol" data-icone="sol" aria-hidden="true"></span>
+          <span class="tema-lua" data-icone="lua" aria-hidden="true"></span>
+        </button>
+        <div class="config">
+          <button id="btn-config" class="btn-icone" type="button" aria-haspopup="true" aria-expanded="false"
+                  aria-controls="painel-config" aria-label="Configurações" title="Configurações">
+            <span data-icone="config" aria-hidden="true"></span>
+          </button>
+          <div id="painel-config" class="dropdown" hidden>
+            <p class="dropdown-titulo">Configurações</p>
+            <fieldset class="opcao">
+              <legend>Velocidade do vento</legend>
+              <div class="segmentado segmentado-cheio" data-preferencia="vento">
+                <button type="button" data-valor="kmh">km/h</button>
+                <button type="button" data-valor="ms">m/s</button>
+                <button type="button" data-valor="mph">mph</button>
+              </div>
+            </fieldset>
+            <fieldset class="opcao">
+              <legend>Formato de hora</legend>
+              <div class="segmentado segmentado-cheio" data-preferencia="hora">
+                <button type="button" data-valor="24">24 h</button>
+                <button type="button" data-valor="12">12 h</button>
+              </div>
+            </fieldset>
+            <button type="button" class="btn-texto perigo" id="btn-limpar-favoritos">Limpar cidades favoritas</button>
           </div>
         </div>
-      </section>
-    {% endif %}
+      </div>
+    </div>
 
-    <footer>Dados do tempo: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a></footer>
-  </main>
+    <nav class="abas" aria-label="Seções da previsão">
+      <div class="container abas-trilho">
+        <a class="aba" href="#hoje">Hoje</a>
+        <a class="aba" href="#por-hora">Por hora</a>
+        <a class="aba" href="#dias">10 dias</a>
+        <a class="aba" href="#mapa" data-camada="radar">Radar</a>
+        <a class="aba" href="#qualidade-ar">Qualidade do ar</a>
+        <a class="aba" href="#mapa">Mapas</a>
+        <a class="aba" href="#indicadores">Informações climáticas</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="conteudo" class="container" tabindex="-1" aria-live="polite"></main>
+
+  <footer class="rodape container">
+    <p>Dados meteorológicos: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> ·
+       Mapa: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></p>
+  </footer>
+
+  <dialog id="modal-dia" class="modal" aria-labelledby="modal-titulo"></dialog>
+  <div id="aviso-flutuante" class="toast" role="status" hidden></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

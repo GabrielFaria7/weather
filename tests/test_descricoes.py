@@ -1,4 +1,4 @@
-from descricoes import descrever, icone, tem_chuva
+from descricoes import descrever, icone
 
 
 def test_descricoes_conhecidas():
@@ -10,8 +10,3 @@ def test_descricoes_conhecidas():
 def test_codigo_desconhecido():
     assert descrever(999) == "Condição desconhecida"
     assert icone(999) == "❔"
-
-
-def test_chuva():
-    assert tem_chuva(63)
-    assert not tem_chuva(0)

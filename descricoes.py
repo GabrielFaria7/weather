@@ -32,9 +32,6 @@ DESCRICOES = {
     99: "Trovoada com granizo forte",
 }
 
-# Códigos que significam chuva (a página web usa isso para mostrar a animação de chuva).
-CODIGOS_DE_CHUVA = {51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99}
-
 
 def descrever(codigo):
     """Devolve a descrição em português. Se o código for estranho, não quebra o programa."""
@@ -60,8 +57,3 @@ def icone(codigo):
     if codigo in (95, 96, 99):
         return "⛈️"
     return "❔"
-
-
-def tem_chuva(codigo):
-    """True se o código for de chuva, garoa ou trovoada."""
-    return codigo in CODIGOS_DE_CHUVA

@@ -1,44 +1,64 @@
 import requests
 
 import web
+from tests.dados_falsos import previsao_falsa
 
-# Respostas "falsas" para o teste não depender da internet.
-CIDADE_FALSA = {"nome": "Manaus", "estado": "Amazonas", "pais": "Brasil", "latitude": -3.1, "longitude": -60.0}
-CLIMA_FALSO = {
-    "temperature_2m": 29.4,
-    "apparent_temperature": 33.1,
-    "relative_humidity_2m": 80,
-    "wind_speed_10m": 7.2,
-    "weather_code": 61,
-}
+QUALIDADE_AR_FALSA = {"european_aqi": 35, "pm2_5": 10.2, "pm10": 18.0, "ozone": 50.0, "nitrogen_dioxide": 12.0}
+
+
+def cliente():
+    return web.app.test_client()
 
 
 def test_pagina_abre():
-    cliente = web.app.test_client()
-    resposta = cliente.get("/")
+    resposta = cliente().get("/")
     assert resposta.status_code == 200
-    assert "Aventura do Clima" in resposta.text
+    assert "<title>Weather</title>" in resposta.text
 
 
-def test_mostra_o_clima(monkeypatch):
-    monkeypatch.setattr(web, "buscar_cidade", lambda nome: CIDADE_FALSA)
-    monkeypatch.setattr(web, "buscar_clima", lambda lat, lon: CLIMA_FALSO)
-    resposta = web.app.test_client().post("/", data={"cidade": "Manaus"})
-    assert "Chuva leve" in resposta.text
-    assert "29.4 °C" in resposta.text
-    assert "Manaus, Amazonas - Brasil" in resposta.text
+def test_sugestoes_de_cidades(monkeypatch):
+    monkeypatch.setattr(web, "buscar_cidades", lambda termo: [{"nome": "Recife", "estado": "Pernambuco"}])
+    resposta = cliente().get("/api/cidades?q=rec")
+    assert resposta.json == [{"nome": "Recife", "estado": "Pernambuco"}]
 
 
-def test_cidade_nao_encontrada(monkeypatch):
-    monkeypatch.setattr(web, "buscar_cidade", lambda nome: None)
-    resposta = web.app.test_client().post("/", data={"cidade": "Xyzabc"})
-    assert "A selva não conhece esse lugar" in resposta.text
+def test_sugestoes_ignoram_texto_curto():
+    assert cliente().get("/api/cidades?q=a").json == []
+
+
+def test_previsao_completa(monkeypatch):
+    monkeypatch.setattr(web, "buscar_previsao", lambda lat, lon: previsao_falsa())
+    monkeypatch.setattr(web, "buscar_qualidade_ar", lambda lat, lon: QUALIDADE_AR_FALSA)
+    resposta = cliente().get("/api/previsao?lat=-3.1&lon=-60&nome=Manaus&estado=Amazonas&pais=Brasil")
+    dados = resposta.json
+    assert resposta.status_code == 200
+    assert dados["local"]["nome"] == "Manaus"
+    assert dados["atual"]["descricao"] == "Chuva leve"
+    assert dados["qualidade_ar"]["nivel"] == "Razoável"
+
+
+def test_previsao_sem_qualidade_do_ar_continua_funcionando(monkeypatch):
+    def falhar(lat, lon):
+        raise requests.ConnectionError()
+
+    monkeypatch.setattr(web, "buscar_previsao", lambda lat, lon: previsao_falsa())
+    monkeypatch.setattr(web, "buscar_qualidade_ar", falhar)
+    resposta = cliente().get("/api/previsao?lat=-3.1&lon=-60")
+    assert resposta.status_code == 200
+    assert resposta.json["qualidade_ar"] is None
+    assert resposta.json["local"]["nome"] == "Sua localização"
+
+
+def test_coordenadas_invalidas():
+    assert cliente().get("/api/previsao?lat=abc&lon=1").status_code == 400
+    assert cliente().get("/api/previsao?lat=200&lon=1").status_code == 400
 
 
 def test_sem_internet(monkeypatch):
-    def falhar(nome):
+    def falhar(lat, lon):
         raise requests.ConnectionError()
 
-    monkeypatch.setattr(web, "buscar_cidade", falhar)
-    resposta = web.app.test_client().post("/", data={"cidade": "Manaus"})
-    assert "sem conexão" in resposta.text
+    monkeypatch.setattr(web, "buscar_previsao", falhar)
+    resposta = cliente().get("/api/previsao?lat=-3.1&lon=-60")
+    assert resposta.status_code == 502
+    assert "internet" in resposta.json["erro"]

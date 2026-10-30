@@ -1,7 +1,7 @@
-# App de Clima 🌿
+# Weather 🌤️
 
-Mostra o clima atual de qualquer cidade usando a API gratuita [Open-Meteo](https://open-meteo.com/) (sem chave).
-Tem duas formas de usar: no terminal e numa página web com tema de selva.
+Mostra o clima de qualquer cidade usando a API gratuita [Open-Meteo](https://open-meteo.com/) (sem chave).
+Tem duas formas de usar: no terminal e num painel web completo.
 
 ## Instalação (Ubuntu)
 
@@ -25,6 +25,13 @@ python web.py
 ```
 Depois, abra http://127.0.0.1:5000 no navegador.
 
+O painel web tem: clima atual, previsão por hora com gráfico, 10 dias (clique em um dia para ver
+detalhes), indicadores (UV, pressão, visibilidade, sol...), qualidade do ar, alertas automáticos,
+mapa, cidades favoritas, °C/°F, modo claro/escuro e localização atual.
+
+> Os **alertas** são calculados a partir da previsão e **não são oficiais**.
+> As **camadas do mapa** (radar, nuvens...) são demonstrativas: ainda não há fonte de dados integrada.
+
 ## Testes
 
 ```bash
@@ -35,8 +42,14 @@ pytest
 
 | Arquivo | O que faz |
 |---|---|
-| `api.py` | Busca a cidade e o clima na Open-Meteo |
-| `descricoes.py` | Traduz o código do tempo para português e escolhe o emoji |
-| `interface.py` | Mostra o resultado no terminal |
-| `main.py` | App do terminal |
-| `web.py` + `templates/` + `static/` | App web |
+| `api.py` | Busca cidades, clima, previsão e qualidade do ar na Open-Meteo |
+| `descricoes.py` | Traduz o código do tempo para português |
+| `interface.py` + `main.py` | App do terminal |
+| `painel.py` | Organiza os dados da API no formato do painel web |
+| `avisos.py` | Calcula os alertas automáticos (chuva, vento, calor, frio) |
+| `web.py` | Servidor Flask: entrega a página e os dados em JSON (`/api/cidades`, `/api/previsao`) |
+| `templates/index.html` | Estrutura da página (cabeçalho, abas) |
+| `static/css/app.css` | Visual, temas claro/escuro e responsividade |
+| `static/js/main.js` | Junta tudo: estado da página e eventos |
+| `static/js/servico.js` | Pedidos ao servidor (camada de dados do front) |
+| `static/js/componentes/` | Uma parte da tela por arquivo (card atual, por hora, 10 dias, mapa...) |
