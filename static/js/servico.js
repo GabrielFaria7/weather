@@ -2,6 +2,9 @@ const URL_GEOCODIFICACAO = "https://geocoding-api.open-meteo.com/v1/search";
 const URL_PREVISAO = "https://api.open-meteo.com/v1/forecast";
 const URL_QUALIDADE_AR = "https://air-quality-api.open-meteo.com/v1/air-quality";
 const TEMPO_LIMITE_MS = 10000;
+const PASSO_GRADE_VENTO = 0.5;
+const RAIO_GRADE_VENTO = 3;
+const HORAS_VENTO = 24;
 
 const PARAMETROS_PREVISAO = {
   timezone: "auto",
@@ -68,6 +71,42 @@ export async function buscarCidades(termo, opcoes) {
     latitude: c.latitude,
     longitude: c.longitude,
   }));
+}
+
+const normalizarLongitude = (longitude) => ((longitude + 540) % 360) - 180;
+const arredondar = (valor) => Number(valor.toFixed(2));
+
+export async function buscarVentoGrade(local, opcoes) {
+  const lado = Math.round((2 * RAIO_GRADE_VENTO) / PASSO_GRADE_VENTO) + 1;
+  const norte = Math.min(85, Math.max(-85 + 2 * RAIO_GRADE_VENTO, local.latitude + RAIO_GRADE_VENTO));
+  const oeste = local.longitude - RAIO_GRADE_VENTO;
+  const grade = { norte, oeste, passo: PASSO_GRADE_VENTO, linhas: lado, colunas: lado };
+
+  const latitudes = [];
+  const longitudes = [];
+  for (let linha = 0; linha < lado; linha++) {
+    for (let coluna = 0; coluna < lado; coluna++) {
+      latitudes.push(arredondar(norte - linha * PASSO_GRADE_VENTO));
+      longitudes.push(arredondar(normalizarLongitude(oeste + coluna * PASSO_GRADE_VENTO)));
+    }
+  }
+
+  const respostas = await pedirOpenMeteo(URL_PREVISAO, {
+    latitude: latitudes.join(","),
+    longitude: longitudes.join(","),
+    hourly: "wind_speed_10m,wind_direction_10m",
+    forecast_hours: HORAS_VENTO,
+    timeformat: "unixtime",
+    timezone: "auto",
+  }, opcoes);
+  const lista = Array.isArray(respostas) ? respostas : [respostas];
+
+  return {
+    grade,
+    horas: lista[0].hourly.time,
+    deslocamento: lista[0].utc_offset_seconds ?? 0,
+    pontos: lista.map((r) => ({ velocidade: r.hourly.wind_speed_10m, direcao: r.hourly.wind_direction_10m })),
+  };
 }
 
 export async function buscarPrevisao(local, opcoes) {

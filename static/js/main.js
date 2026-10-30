@@ -6,7 +6,7 @@ import { iniciarBusca } from "./componentes/busca.js";
 import { renderizarAtual } from "./componentes/atual.js";
 import { renderizarPorHora } from "./componentes/porHora.js";
 import { renderizarDias } from "./componentes/dias.js";
-import { ajustarMapa, renderizarMapa, selecionarCamada } from "./componentes/mapa.js";
+import { ajustarMapa, atualizarMapa, renderizarMapa, selecionarCamada } from "./componentes/mapa.js";
 import { renderizarIndicadores } from "./componentes/indicadores.js";
 import { renderizarQualidadeAr } from "./componentes/qualidadeAr.js";
 import { renderizarAlertas } from "./componentes/alertas.js";
@@ -76,7 +76,7 @@ function montarPainel() {
       <div class="area-mapa" data-area="mapa"></div>
     </div>`;
   renderizarConteudo();
-  renderizarMapa(area("mapa"), estado.dados);
+  renderizarMapa(area("mapa"), estado.dados, contexto());
   ativarAba(document.querySelector('.aba[href="#hoje"]'));
   observarAbas();
 }
@@ -102,6 +102,7 @@ function renderizarConteudo() {
   renderizarDias(area("dias"), estado.dados, ctx);
   renderizarIndicadores(area("indicadores"), estado.dados, ctx);
   renderizarQualidadeAr(area("ar"), estado.dados);
+  atualizarMapa(ctx);
 }
 
 function renderizarListaFavoritos() {

@@ -27,6 +27,8 @@ const UI = {
   nuvem: '<path d="M17.5 19H7a5 5 0 1 1 1-9.9A6 6 0 0 1 19.5 11a4 4 0 0 1-2 8z"/>',
   semSinal: '<path d="M2 2l20 20M8.5 16.4a5 5 0 0 1 7 0M5 12.9a10 10 0 0 1 5.2-2.8M19 12.9a10 10 0 0 0-2-1.5M2 8.8a15 15 0 0 1 4.2-2.7M22 8.8A15 15 0 0 0 10.7 5M12 20h.01"/>',
   seta: '<path d="M12 3v18M5 10l7-7 7 7"/>',
+  reproduzir: '<path d="M7 4v16l13-8z"/>',
+  pausar: '<path d="M8 5v14M16 5v14"/>',
 };
 
 export function iconeUI(nome, classe = "") {
