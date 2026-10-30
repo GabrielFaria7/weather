@@ -1,4 +1,3 @@
-// Seção de qualidade do ar (índice europeu) com os principais poluentes.
 import { esc } from "../formato.js";
 import { iconeUI } from "../icones.js";
 
@@ -28,7 +27,6 @@ export function renderizarQualidadeAr(el, dados) {
     return;
   }
 
-  // O anel enche até 100 (acima disso, fica cheio).
   const porcento = Math.min(ar.indice, 100);
   el.innerHTML = `
     <section class="card" id="qualidade-ar" aria-labelledby="titulo-ar">

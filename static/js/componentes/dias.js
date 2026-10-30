@@ -1,4 +1,3 @@
-// Previsão para 10 dias, com barra de variação térmica e janela de detalhes ao clicar.
 import {
   converterTemperatura, dataCurta, dataLonga, diaSemana, duracao, esc, hora, minutosDoDia, porcentagem, temperatura, vento,
 } from "../formato.js";
@@ -9,7 +8,6 @@ let graficoModal = null;
 
 export function renderizarDias(el, dados, ctx) {
   const { dias, atual } = dados;
-  // A barra de cada dia é desenhada na mesma escala (menor mínima → maior máxima dos 10 dias).
   const menor = Math.min(...dias.map((d) => d.min));
   const maior = Math.max(...dias.map((d) => d.max));
   const faixa = Math.max(maior - menor, 1);
@@ -83,7 +81,6 @@ function abrirDetalhe(dia, indice, ctx) {
     </div>`;
 
   modal.querySelector("[data-fechar]").addEventListener("click", () => modal.close());
-  // Clique fora do conteúdo (no fundo escurecido) fecha a janela.
   modal.onclick = (evento) => { if (evento.target === modal) modal.close(); };
   modal.onclose = () => { graficoModal?.destroy(); graficoModal = null; };
   modal.showModal();

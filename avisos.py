@@ -1,13 +1,5 @@
-"""Avisos automáticos calculados a partir da previsão.
-
-IMPORTANTE: isto NÃO são alertas oficiais. Só olhamos os números da previsão e avisamos
-quando passam de certos limites. Alertas oficiais vêm de órgãos como INMET e Defesa Civil.
-"""
-
-# Ordem de gravidade, da menor para a maior (usada para ordenar a lista).
 NIVEIS = ["atencao", "alerta", "perigo"]
 
-# Quantos dias à frente olhamos (hoje, amanhã e depois de amanhã).
 DIAS_ANALISADOS = 3
 
 
@@ -21,7 +13,6 @@ def _rotulo_dia(indice, data):
 
 
 def _avisos_do_dia(indice, dia):
-    """Compara os números de um dia com os limites e devolve os avisos encontrados."""
     quando = _rotulo_dia(indice, dia["data"])
     chuva = dia["chuva_mm"] or 0
     chance = dia["chance_chuva"] or 0
@@ -62,9 +53,7 @@ def _avisos_do_dia(indice, dia):
 
 
 def gerar_avisos(dias):
-    """Recebe a lista de dias já montada pelo painel e devolve os avisos, mais graves primeiro."""
     avisos = []
     for indice, dia in enumerate(dias[:DIAS_ANALISADOS]):
         avisos.extend(_avisos_do_dia(indice, dia))
-    # sorted é estável: entre avisos do mesmo nível, os de hoje continuam na frente.
     return sorted(avisos, key=lambda aviso: NIVEIS.index(aviso["nivel"]), reverse=True)

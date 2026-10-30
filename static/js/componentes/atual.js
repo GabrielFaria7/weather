@@ -1,4 +1,3 @@
-// Card principal: clima de agora. A temperatura é o maior destaque da página.
 import { agoraNaCidade, direcao, esc, nomeCompleto, porcentagem, temperatura, vento } from "../formato.js";
 import { classeFundo, iconeClima, iconeUI } from "../icones.js";
 

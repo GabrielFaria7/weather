@@ -1,5 +1,3 @@
-// Previsão das próximas 24 horas: gráfico de temperatura + lista que rola na horizontal.
-// O gráfico fica dentro da mesma área de rolagem, então cada ponto fica em cima da sua hora.
 import { converterTemperatura, hora, porcentagem, temperatura, vento } from "../formato.js";
 import { iconeClima, iconeUI } from "../icones.js";
 import { coresDoTema, degrade, graficoDisponivel, reduzirMovimento } from "../graficos.js";
@@ -76,7 +74,6 @@ function criarGrafico(canvas, horas, ctx) {
       layout: { padding: { top: 12, bottom: 4 } },
       interaction: { mode: "index", intersect: false },
       scales: {
-        // offset: true coloca cada ponto no centro da "coluna" da hora.
         x: { display: false, offset: true },
         y: { display: false, grace: "15%" },
       },

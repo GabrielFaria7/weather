@@ -1,4 +1,3 @@
-// Telas de estado: boas-vindas (vazio), carregando (esqueleto) e erro. E o aviso flutuante (toast).
 import { esc } from "../formato.js";
 import { iconeClima, iconeUI } from "../icones.js";
 
@@ -26,7 +25,6 @@ export function renderizarVazio(el, { aoEscolher, aoLocalizar }) {
   el.querySelectorAll("[data-sugestao]").forEach((b) => b.addEventListener("click", () => aoEscolher(SUGESTOES[b.dataset.sugestao])));
 }
 
-// Esqueleto: blocos cinza no formato do painel enquanto os dados chegam.
 export function renderizarCarregando(el) {
   const bloco = (classe) => `<div class="esqueleto ${classe}"></div>`;
   el.innerHTML = `

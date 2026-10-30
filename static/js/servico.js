@@ -1,6 +1,3 @@
-// Camada de dados do front: só faz pedidos ao nosso servidor Flask.
-// Os componentes nunca chamam fetch direto; assim, trocar a fonte de dados mexe só aqui.
-
 async function pedir(url, { signal } = {}) {
   let resposta;
   try {

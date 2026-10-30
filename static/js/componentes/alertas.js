@@ -1,5 +1,3 @@
-// Alertas: mostra os avisos AUTOMÁTICOS calculados no servidor (avisos.py).
-// Deixamos bem claro que não são alertas oficiais e apontamos onde encontrar os oficiais.
 import { esc } from "../formato.js";
 import { iconeUI } from "../icones.js";
 

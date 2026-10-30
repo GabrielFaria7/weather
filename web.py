@@ -1,8 +1,3 @@
-"""Servidor da interface web "Weather". Rode com: python web.py e abra http://127.0.0.1:5000
-
-O Python só entrega dados (JSON). Quem desenha a tela é o JavaScript em static/js/.
-"""
-
 import requests
 from flask import Flask, jsonify, render_template, request
 
@@ -21,7 +16,6 @@ def inicio():
 
 @app.get("/api/cidades")
 def api_cidades():
-    """Sugestões para o campo de busca. Ex.: /api/cidades?q=recife"""
     termo = request.args.get("q", "").strip()
     if len(termo) < 2:
         return jsonify([])
@@ -33,7 +27,6 @@ def api_cidades():
 
 @app.get("/api/previsao")
 def api_previsao():
-    """Painel completo de um lugar. Ex.: /api/previsao?lat=-8.05&lon=-34.9&nome=Recife"""
     try:
         latitude = float(request.args["lat"])
         longitude = float(request.args["lon"])
@@ -55,7 +48,6 @@ def api_previsao():
     except requests.RequestException:
         return jsonify({"erro": ERRO_CONEXAO}), 502
 
-    # A qualidade do ar é um extra: se falhar, o resto do painel continua funcionando.
     try:
         ar = buscar_qualidade_ar(latitude, longitude)
     except requests.RequestException:
@@ -65,5 +57,4 @@ def api_previsao():
 
 
 if __name__ == "__main__":
-    # debug=True recarrega o servidor sozinho quando você salva um arquivo.
     app.run(debug=True)

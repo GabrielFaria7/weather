@@ -1,5 +1,3 @@
-// Mapa com Leaflet + OpenStreetMap. As camadas meteorológicas (radar, nuvens...) ainda não
-// têm fonte de dados integrada, então aparecem claramente como "demonstrativo" e não desenham nada falso.
 import { esc } from "../formato.js";
 import { iconeUI } from "../icones.js";
 
@@ -67,7 +65,6 @@ export function selecionarCamada(id) {
   }
 }
 
-// O Leaflet precisa recalcular o tamanho quando o layout muda (ex.: girar o celular).
 export function ajustarMapa() {
   mapa?.invalidateSize();
 }

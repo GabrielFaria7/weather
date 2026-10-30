@@ -1,12 +1,3 @@
-/* =========================================================
-   Weather — estilos
-   1. Cores (tema claro e escuro)   5. Card principal
-   2. Base                           6. Por hora, 10 dias, mapa
-   3. Cabeçalho e abas               7. Indicadores, ar, alertas, favoritos
-   4. Painel (grade) e cards         8. Estados, modal, toast, animações
-   ========================================================= */
-
-/* ---------- 1. Cores ---------- */
 :root {
   --primaria: #1769E0;
   --secundaria: #4A9EFF;
@@ -64,7 +55,6 @@
   color-scheme: dark;
 }
 
-/* ---------- 2. Base ---------- */
 * { box-sizing: border-box; }
 
 html { scroll-padding-top: 140px; }
@@ -85,7 +75,6 @@ button { font: inherit; color: inherit; }
 a { color: var(--primaria); }
 small { font-size: .8em; }
 
-/* Só as laterais: assim não apaga o espaço de cima/baixo de quem também usa .container (ex.: <main>) */
 .container { width: 100%; max-width: 1320px; margin: 0 auto; padding-inline: 24px; }
 
 .ui-icone { width: 1.15em; height: 1.15em; flex: none; }
@@ -98,7 +87,6 @@ small { font-size: .8em; }
 }
 .pular:focus { top: 12px; }
 
-/* Botões genéricos */
 .btn-icone {
   display: inline-grid; place-items: center;
   width: 40px; height: 40px; flex: none;
@@ -158,7 +146,6 @@ small { font-size: .8em; }
 }
 .selo-demo { background: var(--atencao-fundo); color: var(--atencao); }
 
-/* ---------- 3. Cabeçalho e abas ---------- */
 .topo {
   position: sticky; top: 0; z-index: 50;
   background: var(--topo-fundo);
@@ -168,7 +155,7 @@ small { font-size: .8em; }
 }
 
 .topo-linha {
-  /* Fica numa camada acima das abas, para as sugestões e o menu de configurações abrirem por cima delas */
+
   position: relative; z-index: 2;
   display: flex; align-items: center; gap: 20px;
   height: 68px;
@@ -247,7 +234,6 @@ small { font-size: .8em; }
 .aba[aria-current] { color: var(--primaria); font-weight: 600; }
 .aba[aria-current]::after { transform: scaleX(1); }
 
-/* ---------- 4. Painel e cards ---------- */
 main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none; }
 
 .painel {
@@ -281,7 +267,6 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 .card-dica { font-size: 12px; color: var(--texto-2); }
 .card-fonte { margin-top: 14px; font-size: 12px; color: var(--texto-2); }
 
-/* ---------- 5. Card principal ---------- */
 .card-atual {
   position: relative; overflow: hidden;
   padding: 28px;
@@ -289,7 +274,7 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
   min-height: 100%;
   transition: background .6s ease;
 }
-/* Gradientes discretos conforme o tempo */
+
 .fundo-sol        { background: linear-gradient(135deg, #E8F2FF 0%, #F6F9FF 55%, #FFF2D6 100%); }
 .fundo-nublado    { background: linear-gradient(135deg, #EEF2F7 0%, #E1E8F0 100%); }
 .fundo-chuva      { background: linear-gradient(135deg, #E4ECF6 0%, #CFDAE8 100%); }
@@ -304,7 +289,6 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 :root[data-theme="dark"] .fundo-neve       { background: linear-gradient(135deg, #1B2A44 0%, #24344F 100%); }
 :root[data-theme="dark"] .fundo-noite      { background: linear-gradient(135deg, #101D40 0%, #070D1F 100%); }
 
-/* No fundo noturno o texto fica claro, mesmo no tema claro */
 .fundo-noite { --texto: #F1F5FF; --texto-2: #B3C1DE; --borda: rgba(255, 255, 255, .14); color: var(--texto); }
 
 .atual-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
@@ -359,7 +343,6 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 
 .seta-vento, .bussola-seta { display: inline-flex; transform: rotate(var(--graus)); transition: transform .6s ease; color: var(--primaria); }
 
-/* ---------- 6. Por hora ---------- */
 .rolagem-botoes { display: flex; gap: 6px; }
 
 .horas-trilho {
@@ -388,7 +371,6 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 .hora-chuva.destaque, .dia-chuva.destaque { color: var(--primaria); font-weight: 600; }
 .hora-vento { font-size: 11px; color: var(--texto-2); }
 
-/* ---------- 6. 10 dias ---------- */
 .dias-lista { margin: 0 -8px; padding: 0; list-style: none; }
 .dias-lista li + li { border-top: 1px solid var(--borda); }
 .dia-linha {
@@ -415,7 +397,6 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
   transform: translate(-50%, -50%);
 }
 
-/* ---------- 6. Mapa ---------- */
 .card-mapa { display: flex; flex-direction: column; }
 .camadas { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
 .mapa-area { position: relative; flex: 1; min-height: 320px; border-radius: var(--raio-p); overflow: hidden; border: 1px solid var(--borda); }
@@ -425,7 +406,6 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 .mapa-nota .ui-icone { margin-top: 2px; }
 .leaflet-container { font-family: var(--fonte); }
 
-/* ---------- 7. Indicadores ---------- */
 .indicadores-grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .card-indicador { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
 .card-indicador h3 {
@@ -458,7 +438,6 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 .arco-horizonte { stroke: var(--borda); stroke-width: 1.5; }
 .arco-astro { fill: var(--solar); filter: drop-shadow(0 0 6px rgba(255, 176, 32, .7)); }
 
-/* ---------- 7. Qualidade do ar ---------- */
 .ar-resumo { --cor: var(--ok); display: flex; align-items: center; gap: 16px; }
 .ar-anel {
   position: relative; display: grid; place-items: center; flex: none;
@@ -482,7 +461,6 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 .ar-poluentes dd { margin: 2px 0 0; font-weight: 700; }
 .ar-poluentes small { color: var(--texto-2); font-weight: 500; }
 
-/* ---------- 7. Alertas ---------- */
 .alertas-lista { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
 .alerta {
   --cor: var(--atencao); --cor-fundo: var(--atencao-fundo);
@@ -497,7 +475,6 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 .alerta-nivel { padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; color: var(--cor); border: 1px solid var(--cor); }
 .alerta-detalhe { font-size: 13px; color: var(--texto-2); }
 
-/* ---------- 7. Favoritos ---------- */
 .favoritos-lista { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
 .favorito { display: flex; align-items: center; border-radius: var(--raio-p); transition: background-color .2s; }
 .favorito:hover, .favorito.ativo { background: var(--primaria-suave); }
@@ -514,7 +491,6 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 }
 .favorito-remover:hover { color: var(--perigo); background: var(--perigo-fundo); }
 
-/* ---------- 8. Estados ---------- */
 .estado {
   max-width: 560px; margin: 6vh auto; padding: 0 8px;
   display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center;
@@ -532,7 +508,6 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 .estado-mini .ui-icone { width: 22px; height: 22px; }
 .estado-ok .ui-icone { color: var(--ok); }
 
-/* Esqueletos (carregando) */
 .esqueleto {
   border-radius: var(--raio);
   background: linear-gradient(90deg, var(--superficie-2) 25%, var(--borda) 37%, var(--superficie-2) 63%);
@@ -546,7 +521,6 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 .esq-dias { height: 520px; }
 .esq-indicador { height: 124px; }
 
-/* Modal (detalhe do dia) */
 .modal {
   width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 48px);
   padding: 0; border: 1px solid var(--borda); border-radius: 24px;
@@ -568,7 +542,6 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 .modal-detalhes dt { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--texto-2); }
 .modal-detalhes dd { margin: 2px 0 0; font-weight: 700; }
 
-/* Aviso flutuante */
 .toast {
   position: fixed; left: 50%; bottom: 24px; z-index: 200;
   max-width: calc(100vw - 32px); padding: 12px 18px; border-radius: 14px;
@@ -579,7 +552,6 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 
 .rodape { padding-bottom: 32px; font-size: 12px; color: var(--texto-2); text-align: center; }
 
-/* ---------- 8. Ícones do tempo ---------- */
 .clima-icone { flex: none; overflow: visible; }
 .ic-sol { fill: var(--solar); }
 .ic-raios line { stroke: var(--solar); stroke-width: 3.5; stroke-linecap: round; }
@@ -600,7 +572,6 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 .animado .ic-raio { animation: piscar 3.2s ease-in-out infinite; }
 .animado .ic-sol { animation: pulsar 4s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
 
-/* ---------- Animações ---------- */
 .entrar, .painel > * { animation: subir .45s ease both; }
 .painel > *:nth-child(2) { animation-delay: .05s; }
 .painel > *:nth-child(3) { animation-delay: .1s; }
@@ -622,16 +593,12 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
 
-/* ---------- Responsivo ---------- */
-
-/* Notebook (ex.: 1366 × 768) */
 @media (max-width: 1280px) {
   .area-dias { grid-column: span 7; }
   .area-indicadores { grid-column: span 5; }
   .card-atual { padding: 24px; }
 }
 
-/* Tablet */
 @media (max-width: 1024px) {
   .area-atual, .area-horas, .area-dias, .area-indicadores, .area-ar, .area-mapa { grid-column: span 12; }
   .area-lateral { grid-column: span 12; display: grid; grid-template-columns: 1fr 1fr; }
@@ -640,7 +607,6 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
   .area-mapa { grid-column: span 7; }
 }
 
-/* Celular grande / tablet em pé */
 @media (max-width: 760px) {
   .container { padding-inline: 16px; }
   .topo-linha { flex-wrap: wrap; height: auto; padding-top: 10px; padding-bottom: 10px; gap: 10px; }
@@ -670,7 +636,6 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
   .mapa-area { min-height: 260px; }
 }
 
-/* Celular pequeno */
 @media (max-width: 420px) {
   .segmentado button { padding: 6px 8px; }
   .acoes { gap: 6px; }

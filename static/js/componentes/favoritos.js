@@ -1,4 +1,3 @@
-// Lista de cidades favoritas (salvas no navegador).
 import { esc } from "../formato.js";
 import { iconeUI } from "../icones.js";
 import { favoritos, mesmoLocal } from "../preferencias.js";

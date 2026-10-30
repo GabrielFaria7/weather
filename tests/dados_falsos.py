@@ -1,6 +1,3 @@
-"""Uma resposta da Open-Meteo inventada (2 dias, 48 horas), para os testes não usarem a internet."""
-
-
 def previsao_falsa(chuva_mm=(2.0, 0.0), rajadas=(20.0, 15.0), maximas=(31.0, 30.0), minimas=(24.0, 23.0), codigos=(61, 2)):
     datas = ["2026-10-29", "2026-10-30"]
     horarios = [f"{d}T{h:02d}:00" for d in datas for h in range(24)]

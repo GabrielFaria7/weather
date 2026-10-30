@@ -1,14 +1,8 @@
-"""Transforma as respostas cruas da Open-Meteo no formato que a página web usa.
-
-Aqui não tem internet: só organização de dados. Por isso é fácil de testar.
-"""
-
 from avisos import gerar_avisos
 from descricoes import descrever
 
 HORAS_NO_PAINEL = 24
 
-# Faixas do índice europeu de qualidade do ar (European AQI).
 NIVEIS_QUALIDADE_AR = [
     (20, "Boa"),
     (40, "Razoável"),
@@ -28,7 +22,6 @@ def classificar_qualidade_ar(indice):
 
 
 def _montar_horas(horas):
-    """A API manda listas separadas (horários, temperaturas...). Juntamos em um item por hora."""
     return [
         {
             "horario": horas["time"][i],
@@ -59,7 +52,6 @@ def _montar_dias(diario, todas_as_horas):
             "uv_max": diario["uv_index_max"][i],
             "nascer": diario["sunrise"][i],
             "por": diario["sunset"][i],
-            # As horas daquele dia, para o gráfico da janela de detalhes.
             "horas": [h for h in todas_as_horas if h["horario"].startswith(data)],
         })
     return dias
@@ -83,7 +75,6 @@ def montar_painel(local, previsao, ar=None):
     todas_as_horas = _montar_horas(previsao["hourly"])
     dias = _montar_dias(previsao["daily"], todas_as_horas)
 
-    # A lista de horas começa à meia-noite; pulamos até a hora atual ("2026-10-29T17" == "2026-10-29T17").
     inicio = next(
         (i for i, h in enumerate(todas_as_horas) if h["horario"][:13] == atual["time"][:13]), 0
     )

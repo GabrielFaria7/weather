@@ -1,6 +1,3 @@
-"""Tradução dos códigos de tempo da Open-Meteo (padrão WMO) para português."""
-
-# Cada número que a API devolve em "weather_code" vira um texto em português.
 DESCRICOES = {
     0: "Céu limpo",
     1: "Predominantemente limpo",
@@ -34,12 +31,10 @@ DESCRICOES = {
 
 
 def descrever(codigo):
-    """Devolve a descrição em português. Se o código for estranho, não quebra o programa."""
     return DESCRICOES.get(codigo, "Condição desconhecida")
 
 
 def icone(codigo):
-    """Devolve um emoji que combina com o tempo."""
     if codigo == 0:
         return "☀️"
     if codigo in (1, 2):

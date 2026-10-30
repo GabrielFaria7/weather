@@ -1,4 +1,3 @@
-// Ponto de entrada do front: guarda o estado da página e chama cada componente.
 import { buscarPrevisao } from "./servico.js";
 import { agoraNaCidade } from "./formato.js";
 import { preencherIcones } from "./icones.js";
@@ -27,8 +26,6 @@ const estado = {
 let numeroDoPedido = 0;
 let observadorAbas;
 
-// ---------- Carregar uma cidade ----------
-
 async function carregar(local) {
   const meuPedido = ++numeroDoPedido;
   estado.local = local;
@@ -37,7 +34,7 @@ async function carregar(local) {
 
   try {
     const dados = await buscarPrevisao(local);
-    if (meuPedido !== numeroDoPedido) return; // Chegou uma busca mais nova enquanto esta carregava
+    if (meuPedido !== numeroDoPedido) return;
     estado.dados = dados;
     preferencias.ultimoLocal = local;
     atualizarEndereco(local);
@@ -49,8 +46,6 @@ async function carregar(local) {
   }
 }
 
-// O endereço da página guarda a cidade (ex.: /?lat=-8.05&lon=-34.88&nome=Recife),
-// assim dá para compartilhar o link ou salvar nos favoritos do navegador.
 function atualizarEndereco(local) {
   const parametros = new URLSearchParams({ lat: local.latitude, lon: local.longitude, nome: local.nome });
   if (local.estado) parametros.set("estado", local.estado);
@@ -65,8 +60,6 @@ function localDoEndereco() {
   if (!p.has("lat") || !p.has("lon") || Number.isNaN(latitude) || Number.isNaN(longitude)) return null;
   return { nome: p.get("nome") || "Local escolhido", estado: p.get("estado") || "", pais: p.get("pais") || "", latitude, longitude };
 }
-
-// ---------- Desenhar o painel ----------
 
 function montarPainel() {
   principal.innerHTML = `
@@ -84,7 +77,7 @@ function montarPainel() {
     </div>`;
   renderizarConteudo();
   renderizarMapa(area("mapa"), estado.dados);
-  ativarAba(document.querySelector('.aba[href="#hoje"]')); // O painel sempre abre no topo
+  ativarAba(document.querySelector('.aba[href="#hoje"]'));
   observarAbas();
 }
 
@@ -99,7 +92,6 @@ function contexto() {
   };
 }
 
-// Redesenha tudo menos o mapa (que só muda quando troca a cidade).
 function renderizarConteudo() {
   if (!estado.dados) return;
   const ctx = contexto();
@@ -127,8 +119,6 @@ function mostrarInicio() {
   document.title = "Weather";
   renderizarVazio(principal, { aoEscolher: carregar, aoLocalizar: localizar });
 }
-
-// ---------- Ações ----------
 
 function localizar() {
   if (!("geolocation" in navigator)) {
@@ -173,11 +163,8 @@ function alternarTema() {
   const escuro = document.documentElement.dataset.theme !== "dark";
   document.documentElement.dataset.theme = escuro ? "dark" : "light";
   preferencias.tema = escuro ? "escuro" : "claro";
-  // Os gráficos leem as cores do tema na hora de desenhar, então redesenhamos.
   renderizarConteudo();
 }
-
-// ---------- Menu de configurações ----------
 
 function iniciarConfiguracoes() {
   const botao = document.getElementById("btn-config");
@@ -202,7 +189,7 @@ function iniciarConfiguracoes() {
     grupo.addEventListener("click", (e) => {
       const opcao = e.target.closest("[data-valor]");
       if (!opcao) return;
-      const chave = grupo.dataset.preferencia; // "vento" ou "hora"
+      const chave = grupo.dataset.preferencia;
       estado[chave] = opcao.dataset.valor;
       preferencias[chave] = opcao.dataset.valor;
       marcar();
@@ -218,8 +205,6 @@ function iniciarConfiguracoes() {
     renderizarConteudo();
   });
 }
-
-// ---------- Abas (menu de navegação) ----------
 
 function iniciarAbas() {
   document.querySelectorAll(".aba").forEach((aba) => {
@@ -239,7 +224,6 @@ function ativarAba(ativa) {
   ativa.scrollIntoView({ block: "nearest", inline: "nearest" });
 }
 
-// Marca a aba da seção que está visível enquanto a pessoa rola a página.
 function observarAbas() {
   observadorAbas?.disconnect();
   observadorAbas = new IntersectionObserver((entradas) => {
@@ -255,8 +239,6 @@ function observarAbas() {
   });
 }
 
-// ---------- Início ----------
-
 function iniciar() {
   preencherIcones();
   iniciarBusca({ aoEscolher: carregar });
@@ -270,15 +252,12 @@ function iniciar() {
     b.addEventListener("click", () => definirUnidade(b.dataset.unidade));
   });
 
-  // O botão de favorito é redesenhado junto com o card; por isso escutamos no <main>.
   principal.addEventListener("click", (e) => {
     if (e.target.closest('[data-acao="favorito"]')) alternarFavorito();
   });
 
-  // A logo volta para a tela inicial sem recarregar a página.
   document.querySelector(".logo").addEventListener("click", (e) => { e.preventDefault(); mostrarInicio(); });
 
-  // Relógio da cidade atualizado a cada 30 segundos.
   setInterval(() => {
     const relogio = document.querySelector("[data-relogio]");
     if (relogio && estado.dados) relogio.textContent = agoraNaCidade(estado.dados.fuso, estado.hora);

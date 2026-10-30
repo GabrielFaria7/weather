@@ -1,7 +1,3 @@
-// Ícones desenhados em SVG, sem biblioteca externa.
-// - iconeUI: ícones de traço para botões e cards (24×24).
-// - iconeClima: ícones coloridos do tempo, com animação opcional.
-
 const UI = {
   busca: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   localizacao: '<path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/>',
@@ -38,12 +34,9 @@ export function iconeUI(nome, classe = "") {
     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${UI[nome] ?? ""}</svg>`;
 }
 
-// Preenche os <span data-icone="..."> que já estão no HTML (cabeçalho).
 export function preencherIcones(raiz = document) {
   raiz.querySelectorAll("[data-icone]").forEach((el) => { el.innerHTML = iconeUI(el.dataset.icone); });
 }
-
-// ---------- Ícones do tempo ----------
 
 const NUVEM = "M20 48a10 10 0 0 1 0-20 13 13 0 0 1 25-3 10 10 0 0 1 1 23z";
 
@@ -94,7 +87,6 @@ export function iconeClima(codigo, dia = true, { tamanho = 40, animado = false, 
     viewBox="0 0 64 64" ${acessivel}>${corpo}</svg>`;
 }
 
-// Classe do fundo do card principal (gradiente muda conforme o tempo).
 export function classeFundo(codigo, dia) {
   const tipo = tipoClima(codigo);
   if (!dia && (tipo === "limpo" || tipo === "parcial")) return "fundo-noite";

@@ -1,4 +1,3 @@
-// Cards pequenos com indicadores: UV, umidade, pressão, visibilidade, vento, sol e qualidade do ar.
 import { direcao, duracao, hora, minutosAgoraNaCidade, minutosDoDia, porcentagem, temperatura, vento } from "../formato.js";
 import { iconeUI } from "../icones.js";
 
@@ -25,14 +24,12 @@ function nivelVisibilidade(km) {
 
 const limitar = (v, min = 0, max = 100) => Math.min(Math.max(v, min), max);
 
-// Escala colorida com um marcador (usada por UV e qualidade do ar).
 const escala = (porcento, classe) =>
   `<span class="escala ${classe}" aria-hidden="true"><span class="escala-marca" style="left:${limitar(porcento)}%"></span></span>`;
 
 const barra = (porcento) =>
   `<span class="barra" aria-hidden="true"><span class="barra-cheia" style="width:${limitar(porcento)}%"></span></span>`;
 
-// Arco do sol: mostra em que ponto do dia estamos entre o nascer e o pôr.
 function arcoSol(progresso) {
   const p = limitar(progresso, 0, 1);
   const angulo = Math.PI * (1 - p);

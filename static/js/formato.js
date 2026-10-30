@@ -1,7 +1,3 @@
-// Funções pequenas de formatação: unidades, horários e textos.
-// Os horários da API já vêm no fuso da cidade ("2026-10-29T18:00"), então lemos o texto
-// direto, sem passar pelo fuso do computador de quem está vendo.
-
 export function esc(texto) {
   return String(texto ?? "").replace(/[&<>"']/g, (c) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
@@ -74,7 +70,6 @@ export function dataLonga(dataIso) {
   return dataUTC(dataIso).toLocaleDateString("pt-BR", { day: "numeric", month: "long", timeZone: "UTC" });
 }
 
-// Data e hora de agora no fuso da cidade (ex.: "Quinta-feira, 29 de outubro · 17:45").
 export function agoraNaCidade(fuso, formato = "24") {
   const agora = new Date();
   try {

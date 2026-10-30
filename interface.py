@@ -1,10 +1,7 @@
-"""Mostra o resultado no terminal. Só cuida da aparência, não busca nada."""
-
 from descricoes import descrever, icone
 
 
 def nome_completo(cidade):
-    """Monta "Recife, Pernambuco - Brasil", pulando as partes que estiverem vazias."""
     local = ", ".join(parte for parte in (cidade["nome"], cidade["estado"]) if parte)
     if cidade["pais"]:
         local += f" - {cidade['pais']}"

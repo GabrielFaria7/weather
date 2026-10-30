@@ -1,9 +1,8 @@
-// Campo de busca com sugestões enquanto a pessoa digita (e teclado: ↑ ↓ Enter Esc).
 import { buscarCidades } from "../servico.js";
 import { esc } from "../formato.js";
 import { favoritos } from "../preferencias.js";
 
-const ESPERA_MS = 250; // Espera a pessoa parar de digitar antes de perguntar à API
+const ESPERA_MS = 250;
 
 export function iniciarBusca({ aoEscolher }) {
   const form = document.getElementById("form-busca");
@@ -83,7 +82,6 @@ export function iniciarBusca({ aoEscolher }) {
     temporizador = setTimeout(() => pesquisar(termo), ESPERA_MS);
   });
 
-  // Com o campo vazio, sugere as cidades favoritas.
   function mostrarFavoritos() {
     const lista = favoritos.listar();
     if (lista.length) mostrar(lista, "Favoritas");
@@ -97,7 +95,6 @@ export function iniciarBusca({ aoEscolher }) {
     else if (e.key === "Escape") { fechar(); }
   });
 
-  // Enter: usa a sugestão destacada, ou a primeira encontrada.
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     clearTimeout(temporizador);
@@ -108,7 +105,6 @@ export function iniciarBusca({ aoEscolher }) {
     if (cidades.length) escolher(cidades[0]);
   });
 
-  // mousedown (e não click) para escolher antes de o campo perder o foco.
   lista.addEventListener("mousedown", (e) => {
     const item = e.target.closest(".sugestao");
     if (!item) return;

@@ -1,6 +1,3 @@
-// Preferências e favoritos salvos no navegador (localStorage).
-// Tudo dentro de try/catch: em janela anônima o navegador pode bloquear o armazenamento.
-
 const PREFIXO = "weather.";
 
 function ler(chave, padrao) {
@@ -15,15 +12,12 @@ function ler(chave, padrao) {
 function salvar(chave, valor) {
   try {
     localStorage.setItem(PREFIXO + chave, JSON.stringify(valor));
-  } catch {
-    /* Sem armazenamento: a preferência vale só até fechar a página. */
-  }
+  } catch {}
 }
 
 export const preferencias = {
-  // O tema é salvo como texto puro porque o script do <head> lê sem JSON.
   get tema() { try { return localStorage.getItem(PREFIXO + "tema"); } catch { return null; } },
-  set tema(v) { try { localStorage.setItem(PREFIXO + "tema", v); } catch { /* idem */ } },
+  set tema(v) { try { localStorage.setItem(PREFIXO + "tema", v); } catch {} },
 
   get unidade() { return ler("unidade", "C"); },
   set unidade(v) { salvar("unidade", v); },
@@ -38,7 +32,6 @@ export const preferencias = {
   set ultimoLocal(v) { salvar("ultimo", v); },
 };
 
-// Duas cidades são "a mesma" se as coordenadas forem praticamente iguais.
 export const mesmoLocal = (a, b) =>
   Math.abs(a.latitude - b.latitude) < 0.01 && Math.abs(a.longitude - b.longitude) < 0.01;
 

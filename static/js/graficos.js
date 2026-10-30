@@ -1,5 +1,3 @@
-// Ajuda a criar gráficos Chart.js com as cores do tema atual.
-
 function cor(variavel) {
   return getComputedStyle(document.documentElement).getPropertyValue(variavel).trim();
 }
@@ -19,7 +17,6 @@ export function graficoDisponivel() {
   return typeof window.Chart !== "undefined";
 }
 
-// Preenchimento em degradê embaixo da linha.
 export function degrade(ctx, area, corBase) {
   const g = ctx.createLinearGradient(0, area.top, 0, area.bottom);
   g.addColorStop(0, corBase + "55");
