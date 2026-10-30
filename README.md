@@ -20,6 +20,15 @@ Tem duas formas de usar: no terminal e num painel web completo.
   </tr>
 </table>
 
+### Mapa com vento e nuvens
+
+<table>
+  <tr>
+    <td width="50%"><strong>Vento (modo escuro)</strong><br><img src="docs/mapa-vento.png" alt="Mapa do Rio de Janeiro no modo escuro com partículas coloridas mostrando a previsão do vento"></td>
+    <td width="50%"><strong>Nuvens (modo claro)</strong><br><img src="docs/mapa-nuvens.png" alt="Mapa do Rio de Janeiro no modo claro com as nuvens da imagem de satélite GOES-East por cima"></td>
+  </tr>
+</table>
+
 **No terminal**
 
 ```
