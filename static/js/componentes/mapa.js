@@ -15,15 +15,38 @@ const VENTO_MAXIMO_KMH = 54;
 const VALIDADE_DADOS_MS = 30 * 60 * 1000;
 const VALIDADE_SATELITE_MS = 5 * 60 * 1000;
 
+const CREDITO_GIBS = 'Satélite: <a href="https://www.earthdata.nasa.gov/gibs" target="_blank" rel="noopener">NOAA GOES · NASA GIBS</a>';
+const CREDITO_EUMETSAT = 'Satélite: <a href="https://view.eumetsat.int/" target="_blank" rel="noopener">© EUMETSAT</a>';
+const AVISO_INFRAVERMELHO = " Por serem infravermelhas, funcionam de dia e de noite, mas áreas muito frias, como montanhas "
+  + "altas e neve, também podem aparecer claras.";
 const SATELITES = [
-  { id: "GOES-East", nome: "GOES-East", oeste: -110, leste: -15 },
-  { id: "GOES-West", nome: "GOES-West", oeste: -180, leste: -110 },
+  {
+    id: "GOES-West", fonte: "gibs", camada: "GOES-West_ABI_GeoColor", oeste: -180, leste: -110, quadros: 12,
+    descricao: "do satélite <strong>GOES-West</strong> (NOAA, via NASA GIBS)", frequencia: "10 minutos",
+    atraso: "cerca de 1 hora", brilho: [80, 210], credito: CREDITO_GIBS,
+  },
+  {
+    id: "GOES-East", fonte: "gibs", camada: "GOES-East_ABI_GeoColor", oeste: -110, leste: -15, quadros: 12,
+    descricao: "do satélite <strong>GOES-East</strong> (NOAA, via NASA GIBS)", frequencia: "10 minutos",
+    atraso: "cerca de 1 hora", brilho: [80, 210], credito: CREDITO_GIBS,
+  },
+  {
+    id: "MTG", fonte: "eumetsat", camada: "mtg_fd:ir105_hrfi", oeste: -15, leste: 60, quadros: 12,
+    descricao: "infravermelhas do satélite <strong>Meteosat MTG</strong> (EUMETSAT)", frequencia: "10 minutos",
+    atraso: "cerca de 30 minutos", brilho: [70, 190], credito: CREDITO_EUMETSAT, aviso: AVISO_INFRAVERMELHO,
+  },
+  {
+    id: "Mosaico", fonte: "eumetsat", camada: "mumi:worldcloudmap_ir108", oeste: 60, leste: 180, quadros: 8,
+    descricao: "infravermelhas do <strong>mosaico de satélites geoestacionários</strong> da EUMETSAT",
+    frequencia: "3 horas", atraso: "menos de 1 hora", brilho: [95, 200], credito: CREDITO_EUMETSAT,
+    aviso: AVISO_INFRAVERMELHO,
+  },
 ];
 const LATITUDE_MAXIMA_SATELITE = 65;
 const ZOOM_MAXIMO_NUVENS = 8;
-const BRILHO_SEM_NUVEM = 80;
-const BRILHO_NUVEM_DENSA = 210;
 const OPACIDADE_NUVEM_DENSA = 195;
+const LIMIAR_COR_QUENTE = 12;
+const FAIXA_COR_QUENTE = 18;
 
 let mapa = null;
 let local = null;
@@ -127,7 +150,7 @@ export function ajustarMapa() {
 }
 
 function notaPadrao() {
-  return `Escolha <strong>Nuvens</strong> para ver as imagens reais do satélite das últimas 2 horas ou
+  return `Escolha <strong>Nuvens</strong> para ver as imagens reais de satélite das últimas horas ou
     <strong>Vento</strong> para ver a previsão das próximas 24 horas em volta de <strong>${esc(local?.nome ?? "")}</strong>.`;
 }
 
@@ -386,19 +409,19 @@ async function ligarNuvens() {
   }
   const satelite = satelitePara(local);
   if (!satelite) {
-    falhar("Nuvens", "as imagens de satélite usadas aqui cobrem só as Américas e o Pacífico leste. "
+    falhar("Nuvens", "os satélites usados aqui não enxergam bem as regiões perto dos polos. "
       + "Para esta cidade ainda não há camada de nuvens.");
     return;
   }
 
   escreverNota("<strong>Nuvens:</strong> carregando as imagens de satélite…");
   try {
-    const { camada, horarios } = await dadosNuvens(satelite);
+    const horarios = await dadosNuvens(satelite);
     if (camadaAtiva !== "nuvens" || mapa !== meuMapa) return;
     if (meuMapa.getZoom() > ZOOM_MAXIMO_NUVENS) meuMapa.setZoom(ZOOM_MAXIMO_NUVENS);
     indiceQuadro = horarios.length - 1;
     camadasNuvens = horarios.map((horario, i) =>
-      criarCamadaNuvens(urlTileSatelite(camada, horario), i === indiceQuadro ? 1 : 0).addTo(meuMapa));
+      criarCamadaNuvens(satelite, urlTileSatelite(satelite, horario), i === indiceQuadro ? 1 : 0).addTo(meuMapa));
     mostrarControles("nuvens");
     atualizarQuadro();
     if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -417,20 +440,20 @@ async function dadosNuvens(satelite) {
     return nuvensCarregadas.dados;
   }
   pedido = new AbortController();
-  const dados = await buscarHorariosSatelite(satelite.id, { signal: pedido.signal });
+  const dados = await buscarHorariosSatelite(satelite, { signal: pedido.signal });
   pedido = null;
   nuvensCarregadas = { satelite: satelite.id, quando: Date.now(), dados };
   return dados;
 }
 
-function criarCamadaNuvens(url, opacidade) {
+function criarCamadaNuvens(satelite, url, opacidade) {
   const camada = window.L.gridLayer({
     pane: "nuvens",
     maxNativeZoom: 7,
     maxZoom: 18,
     opacity: opacidade,
     className: "camada-nuvens",
-    attribution: 'Satélite: <a href="https://www.earthdata.nasa.gov/gibs" target="_blank" rel="noopener">NOAA GOES · NASA GIBS</a>',
+    attribution: satelite.credito,
   });
   camada.createTile = (coords, pronto) => {
     const tile = document.createElement("canvas");
@@ -439,24 +462,25 @@ function criarCamadaNuvens(url, opacidade) {
     const imagem = new Image();
     imagem.crossOrigin = "anonymous";
     imagem.onload = () => {
-      desenharNuvens(tile, imagem);
+      desenharNuvens(tile, imagem, satelite.brilho);
       pronto(null, tile);
     };
     imagem.onerror = () => pronto(null, tile);
-    imagem.src = window.L.Util.template(url, coords);
+    imagem.src = url(coords);
     return tile;
   };
   return camada;
 }
 
-function desenharNuvens(tile, imagem) {
+function desenharNuvens(tile, imagem, [semNuvem, nuvemDensa]) {
   const pincel = tile.getContext("2d", { willReadFrequently: true });
   pincel.drawImage(imagem, 0, 0, 256, 256);
   const pixels = pincel.getImageData(0, 0, 256, 256);
   const d = pixels.data;
   for (let i = 0; i < d.length; i += 4) {
     const brilho = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-    const forca = Math.min(1, Math.max(0, (brilho - BRILHO_SEM_NUVEM) / (BRILHO_NUVEM_DENSA - BRILHO_SEM_NUVEM)));
+    const quente = Math.min(1, Math.max(0, (d[i] - d[i + 2] - LIMIAR_COR_QUENTE) / FAIXA_COR_QUENTE));
+    const forca = Math.min(1, Math.max(0, (brilho - semNuvem) / (nuvemDensa - semNuvem))) * (1 - quente);
     const tom = 175 + 80 * forca;
     d[i] = tom;
     d[i + 1] = tom;
@@ -466,22 +490,31 @@ function desenharNuvens(tile, imagem) {
   pincel.putImageData(pixels, 0, 0);
 }
 
+function diaNaCidade(data) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: fuso }).format(data);
+}
+
 function rotuloNuvens(indice) {
-  const { horarios } = nuvensCarregadas.dados;
-  const horario = horaNaCidade(new Date(horarios[indice]), fuso, ctx.hora);
-  return indice === horarios.length - 1 ? `Mais recente · ${horario}` : horario;
+  const horarios = nuvensCarregadas.dados;
+  const data = new Date(horarios[indice]);
+  const horario = horaNaCidade(data, fuso, ctx.hora);
+  if (indice === horarios.length - 1) return `Mais recente · ${horario}`;
+  const ultimo = new Date(horarios[horarios.length - 1]);
+  return diaNaCidade(data) === diaNaCidade(ultimo) ? horario : `Dia anterior · ${horario}`;
 }
 
 function notaNuvens() {
-  const { horarios } = nuvensCarregadas.dados;
+  const horarios = nuvensCarregadas.dados;
   const satelite = SATELITES.find((s) => s.id === nuvensCarregadas.satelite);
   const atual = new Date(horarios[indiceQuadro]);
   const idade = Math.max(0, Math.round((Date.now() - atual.getTime()) / 60000));
-  const primeira = horaNaCidade(new Date(horarios[0]), fuso, ctx.hora);
-  const ultima = horaNaCidade(new Date(horarios[horarios.length - 1]), fuso, ctx.hora);
+  const inicio = new Date(horarios[0]);
+  const fim = new Date(horarios[horarios.length - 1]);
+  const primeira = horaNaCidade(inicio, fuso, ctx.hora) + (diaNaCidade(inicio) === diaNaCidade(fim) ? "" : " do dia anterior");
+  const ultima = horaNaCidade(fim, fuso, ctx.hora);
   const leitura = document.querySelector("[data-leitura]");
   if (leitura) leitura.textContent = `Imagem das ${horaNaCidade(atual, fuso, ctx.hora)} · há ${duracao(idade)}`;
-  return `<strong>Nuvens:</strong> imagens reais do satélite <strong>${esc(satelite?.nome ?? "")}</strong> (NOAA, via
-    NASA GIBS), das ${esc(primeira)} às ${esc(ultima)}, a cada 10 minutos. As áreas brancas são nuvens. As imagens chegam
-    com cerca de 1 hora de atraso, então mostram o passado recente, não uma previsão.`;
+  return `<strong>Nuvens:</strong> imagens reais ${satelite.descricao}, das ${esc(primeira)} às ${esc(ultima)}, a cada
+    ${satelite.frequencia}. As áreas brancas são nuvens. As imagens chegam com ${satelite.atraso} de atraso, então mostram
+    o passado recente, não uma previsão.${satelite.aviso ?? ""}`;
 }

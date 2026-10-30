@@ -7,7 +7,8 @@ const RAIO_GRADE_VENTO = 3;
 const HORAS_VENTO = 24;
 const URL_GIBS = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best";
 const MATRIZ_SATELITE = "GoogleMapsCompatible_Level7";
-const QUADROS_SATELITE = 12;
+const URL_EUMETSAT = "https://view.eumetsat.int/geoserver";
+const LIMITE_MERCATOR = 20037508.342789244;
 const JANELA_SATELITE_MS = 4 * 60 * 60 * 1000;
 
 const PARAMETROS_PREVISAO = {
@@ -115,26 +116,32 @@ export async function buscarVentoGrade(local, opcoes) {
 
 const isoSatelite = (data) => data.toISOString().replace(/\.\d{3}Z$/, "Z");
 
-function expandirHorarios(dominio) {
-  return dominio.split(",").flatMap((trecho) => {
+function ultimosHorarios(dominio, quantidade) {
+  const horarios = dominio.split(",").flatMap((trecho) => {
     const [inicio, fim, periodo] = trecho.trim().split("/");
-    if (!fim) return [inicio];
-    const passo = Number(/PT(\d+)M/.exec(periodo ?? "")?.[1] ?? 10) * 60000;
-    const horarios = [];
-    for (let t = Date.parse(inicio); t <= Date.parse(fim); t += passo) horarios.push(isoSatelite(new Date(t)));
-    return horarios;
+    if (!fim) return [Date.parse(inicio)];
+    const [, horas = 0, minutos = 0] = /PT(?:(\d+)H)?(?:(\d+)M)?/.exec(periodo ?? "") ?? [];
+    const passo = (Number(horas) * 60 + Number(minutos) || 10) * 60000;
+    const lista = [];
+    for (let t = Date.parse(fim); t >= Date.parse(inicio) && lista.length < quantidade; t -= passo) lista.push(t);
+    return lista;
   });
+  return [...new Set(horarios)].sort((a, b) => a - b).slice(-quantidade).map((t) => isoSatelite(new Date(t)));
+}
+
+function urlHorariosSatelite({ fonte, camada }) {
+  if (fonte === "eumetsat") {
+    return `${URL_EUMETSAT}/${camada.replace(":", "/")}/ows?service=WMS&version=1.3.0&request=GetCapabilities`;
+  }
+  const fim = new Date();
+  const inicio = new Date(fim.getTime() - JANELA_SATELITE_MS);
+  return `${URL_GIBS}/1.0.0/${camada}/default/${MATRIZ_SATELITE}/all/${isoSatelite(inicio)}--${isoSatelite(fim)}.xml`;
 }
 
 export async function buscarHorariosSatelite(satelite, { signal } = {}) {
-  const camada = `${satelite}_ABI_GeoColor`;
-  const fim = new Date();
-  const inicio = new Date(fim.getTime() - JANELA_SATELITE_MS);
-  const url = `${URL_GIBS}/1.0.0/${camada}/default/${MATRIZ_SATELITE}/all/${isoSatelite(inicio)}--${isoSatelite(fim)}.xml`;
-
   let texto;
   try {
-    const resposta = await fetch(url, { signal: sinalComLimite(signal) });
+    const resposta = await fetch(urlHorariosSatelite(satelite), { signal: sinalComLimite(signal) });
     if (!resposta.ok) throw new Error(String(resposta.status));
     texto = await resposta.text();
   } catch (erro) {
@@ -142,14 +149,28 @@ export async function buscarHorariosSatelite(satelite, { signal } = {}) {
     throw new Error("Não foi possível obter as imagens de satélite agora. Tente de novo em instantes.");
   }
 
-  const dominio = /<Domain>([^<]*)<\/Domain>/.exec(texto)?.[1] ?? "";
-  const horarios = dominio ? expandirHorarios(dominio).slice(-QUADROS_SATELITE) : [];
+  const padrao = satelite.fonte === "eumetsat" ? /<Dimension name="time"[^>]*>([^<]*)<\/Dimension>/ : /<Domain>([^<]*)<\/Domain>/;
+  const dominio = padrao.exec(texto)?.[1] ?? "";
+  const horarios = dominio ? ultimosHorarios(dominio, satelite.quadros) : [];
   if (!horarios.length) throw new Error("Não há imagens de satélite recentes para esta região.");
-  return { camada, horarios };
+  return horarios;
 }
 
-export function urlTileSatelite(camada, horario) {
-  return `${URL_GIBS}/${camada}/default/${horario}/${MATRIZ_SATELITE}/{z}/{y}/{x}.png`;
+export function urlTileSatelite({ fonte, camada }, horario) {
+  if (fonte === "gibs") {
+    return ({ x, y, z }) => `${URL_GIBS}/${camada}/default/${horario}/${MATRIZ_SATELITE}/${z}/${y}/${x}.png`;
+  }
+  return ({ x, y, z }) => {
+    const lado = (2 * LIMITE_MERCATOR) / 2 ** z;
+    const oeste = -LIMITE_MERCATOR + x * lado;
+    const norte = LIMITE_MERCATOR - y * lado;
+    const parametros = new URLSearchParams({
+      service: "WMS", version: "1.3.0", request: "GetMap", layers: camada, styles: "", crs: "EPSG:3857",
+      bbox: [oeste, norte - lado, oeste + lado, norte].map((v) => v.toFixed(2)).join(","),
+      width: 256, height: 256, format: "image/png", transparent: "true", time: horario,
+    });
+    return `${URL_EUMETSAT}/wms?${parametros}`;
+  };
 }
 
 export async function buscarPrevisao(local, opcoes) {

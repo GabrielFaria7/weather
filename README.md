@@ -72,7 +72,9 @@ mapa com vento e nuvens animados, cidades favoritas, °C/°F, modo claro/escuro 
 
 > Os **alertas** são calculados a partir da previsão e **não são oficiais**.
 > No **mapa**, a camada **Vento** mostra a previsão da Open-Meteo animada (não é medição em tempo real) e a
-> camada **Nuvens** mostra imagens reais do satélite GOES (NOAA, via NASA GIBS) das últimas 2 horas, só nas Américas.
+> camada **Nuvens** mostra imagens reais de satélite do mundo todo (menos perto dos polos): GOES (NOAA, via NASA GIBS)
+> nas Américas e Meteosat MTG (EUMETSAT) na Europa, África e Oriente Médio, a cada 10 minutos; na Ásia e Oceania,
+> o mosaico de satélites geoestacionários da EUMETSAT, a cada 3 horas.
 
 ## Publicar no Render
 
