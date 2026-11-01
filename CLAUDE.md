@@ -55,6 +55,7 @@ pytest                                         # testes (pytest.ini já ajusta o
 
 ## Deploy
 
+- Endereço público: https://weather-jdpm.onrender.com/ (está no topo do README).
 - Render, plano gratuito, configurado por `render.yaml` e `.python-version` (Python 3.12.3).
 - Start command: `gunicorn web:app --bind 0.0.0.0:$PORT --workers 2 --timeout 60`.
 - Deploy automático a cada push no branch `main`.

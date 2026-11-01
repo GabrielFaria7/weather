@@ -3,6 +3,10 @@
 Mostra o clima de qualquer cidade usando a API gratuita [Open-Meteo](https://open-meteo.com/) (sem chave).
 Tem duas formas de usar: no terminal e num painel web completo.
 
+**Acesse o painel online:** https://weather-jdpm.onrender.com/
+
+> Hospedado no plano gratuito do Render: se o site estiver "dormindo", a primeira visita pode levar cerca de 1 minuto.
+
 ## Prints
 
 **Painel web (modo claro)**
