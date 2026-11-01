@@ -1,5 +1,6 @@
 import {
-  converterTemperatura, dataCurta, dataLonga, diaSemana, duracao, esc, hora, minutosDoDia, porcentagem, temperatura, vento,
+  converterTemperatura, dataCurta, dataLonga, diaSemana, duracao, esc, hora, milimetros, minutosDoDia, porcentagem,
+  temperatura, vento,
 } from "../formato.js";
 import { iconeClima, iconeUI } from "../icones.js";
 import { coresDoTema, graficoDisponivel, reduzirMovimento } from "../graficos.js";
@@ -48,7 +49,7 @@ function abrirDetalhe(dia, indice, ctx) {
   const luz = minutosDoDia(dia.por) - minutosDoDia(dia.nascer);
   const itens = [
     ["guardaChuva", "Chance de chuva", porcentagem(dia.chance_chuva)],
-    ["gota", "Chuva acumulada", dia.chuva_mm == null ? "—" : `${dia.chuva_mm.toFixed(1)} mm`],
+    ["gota", "Chuva acumulada", milimetros(dia.chuva_mm)],
     ["vento", "Vento máximo", vento(dia.vento_max, ctx.vento)],
     ["vento", "Rajadas", vento(dia.rajada_max, ctx.vento)],
     ["sol", "Índice UV máx.", dia.uv_max == null ? "—" : dia.uv_max.toFixed(1)],

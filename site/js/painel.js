@@ -25,7 +25,10 @@ function montarHoras(horas) {
     codigo: horas.weather_code[i],
     descricao: descrever(horas.weather_code[i]),
     chance_chuva: horas.precipitation_probability[i],
+    chuva_mm: horas.precipitation?.[i] ?? null,
     vento: horas.wind_speed_10m[i],
+    rajada: horas.wind_gusts_10m?.[i] ?? null,
+    direcao_vento: horas.wind_direction_10m?.[i] ?? null,
     dia: Boolean(horas.is_day[i]),
   }));
 }

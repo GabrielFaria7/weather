@@ -382,6 +382,17 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 .hora-chuva .ui-icone, .dia-chuva .ui-icone { width: 12px; height: 12px; }
 .hora-chuva.destaque, .dia-chuva.destaque { color: var(--primaria); font-weight: 600; }
 .hora-vento { font-size: 11px; color: var(--texto-2); }
+.horas-cabecalho { flex-wrap: wrap; }
+.horas-variaveis { margin-left: auto; }
+.horas-variaveis button { padding: 6px 12px; font-size: 13px; }
+.hora-extra { display: none; align-items: center; gap: 2px; font-size: 11px; color: var(--texto-2); white-space: nowrap; }
+#por-hora[data-variavel="temperatura"] .so-temperatura,
+#por-hora[data-variavel="chuva"] .so-chuva,
+#por-hora[data-variavel="vento"] .so-vento { display: inline-flex; }
+#por-hora[data-variavel="vento"] .hora-chuva { display: none; }
+#por-hora[data-variavel="chuva"] .hora-mm.destaque { font-weight: 600; color: var(--primaria); }
+#por-hora[data-variavel="vento"] .hora-direcao { font-size: 12px; font-weight: 600; color: var(--texto); }
+.hora-direcao .seta-vento .ui-icone { width: 12px; height: 12px; }
 
 .dias-lista { margin: 0 -8px; padding: 0; list-style: none; }
 .dias-lista li + li { border-top: 1px solid var(--borda); }
@@ -694,6 +705,8 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
   .atual-metricas dd { font-size: 15px; }
 
   .horas-trilho { margin: 0 -16px; padding: 0 16px 6px; }
+  .horas-variaveis { order: 3; flex-basis: 100%; margin-left: 0; display: flex; }
+  .horas-variaveis button { flex: 1; }
 
   .dia-linha { grid-template-columns: 58px 30px 44px 32px minmax(48px, 1fr) 32px; gap: 8px; }
   .dia-desc { display: none; }

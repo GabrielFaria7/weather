@@ -20,10 +20,20 @@ const VENTO = {
   mph: { fator: 1 / 1.609, sufixo: "mph", casas: 0 },
 };
 
+export function converterVento(kmh, unidade = "kmh") {
+  return kmh == null ? null : kmh * (VENTO[unidade] ?? VENTO.kmh).fator;
+}
+
 export function vento(kmh, unidade = "kmh") {
   if (kmh == null) return "—";
   const u = VENTO[unidade] ?? VENTO.kmh;
   return `${(kmh * u.fator).toFixed(u.casas)} ${u.sufixo}`;
+}
+
+export function milimetros(mm) {
+  if (mm == null) return "—";
+  if (mm === 0) return "0 mm";
+  return `${mm > 0 && mm < 0.1 ? "<0,1" : mm.toFixed(1).replace(".", ",")} mm`;
 }
 
 const DIRECOES = ["N", "NE", "L", "SE", "S", "SO", "O", "NO"];

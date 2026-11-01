@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  converterTemperatura, dataCurta, dataHoraLocal, diaSemana, direcao, duracao, esc, hora, horaNaCidade, minutosDoDia,
+  converterTemperatura, converterVento, dataCurta, dataHoraLocal, milimetros, diaSemana, direcao, duracao, esc, hora, horaNaCidade, minutosDoDia,
   nomeCompleto, porcentagem, temperatura, vento,
 } from "../../site/js/formato.js";
 
@@ -81,4 +81,14 @@ test("data e hora da previsão salva no fuso do aparelho", () => {
     if (fusoOriginal === undefined) delete process.env.TZ;
     else process.env.TZ = fusoOriginal;
   }
+});
+
+test("conversão de vento e milímetros", () => {
+  assert.equal(converterVento(36, "ms"), 10);
+  assert.equal(converterVento(36, "kmh"), 36);
+  assert.equal(converterVento(null, "kmh"), null);
+  assert.equal(milimetros(3.25), "3,3 mm");
+  assert.equal(milimetros(0), "0 mm");
+  assert.equal(milimetros(0.04), "<0,1 mm");
+  assert.equal(milimetros(null), "—");
 });

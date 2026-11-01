@@ -31,7 +31,7 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
 - Não há servidor próprio: o Python é só o app do terminal. `descricoes.py` continua em Python porque o terminal
   usa; a tabela de descrições existe nas duas linguagens.
 - **Lógica pura fora dos componentes:** o que não depende de Leaflet nem do DOM fica em módulos próprios
-  (`painel.js`, `avisos.js`, `iqar.js`, `alertasOficiais.js`, `satelites.js`, `gradeVento.js`, `formato.js`, `preferencias.js`, `servico.js`) e tem
+  (`painel.js`, `avisos.js`, `iqar.js`, `seriesPorHora.js`, `alertasOficiais.js`, `satelites.js`, `gradeVento.js`, `formato.js`, `preferencias.js`, `servico.js`) e tem
   teste em `tests/js/` (`node:test`; `fetch` e `localStorage` são simulados nos testes). Ao criar lógica nova,
   seguir esse padrão e escrever o teste junto.
 - **Sem build no front:** HTML/CSS/JS puros. Chart.js e Leaflet vêm de CDN em `site/index.html`.
@@ -66,6 +66,13 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   com a faixa. Testes com o exemplo oficial do MMA e uma resposta real de São Paulo
   (`tests/js/dados/open-meteo-ar-sao-paulo-2026-11-01.json`). Previsões salvas no formato antigo (só `current`)
   continuam funcionando, sem IQAr.
+- **Previsão por hora com três abas** (Temperatura, Chuva, Vento): `seriesPorHora` e `dicaPorHora`
+  (`seriesPorHora.js`) preparam os dados de cada gráfico e o texto da dica; `porHora.js` troca o gráfico do Chart.js
+  sem redesenhar a lista e marca a aba em `#por-hora[data-variavel]`, que o CSS usa para mostrar as linhas certas de
+  cada hora (`.so-temperatura`, `.so-chuva`, `.so-vento`). Chuva: barras de mm por hora (eixo mínimo de 2 mm, para
+  garoa não parecer temporal) + linha tracejada da chance. Vento: velocidade + rajadas tracejadas, seta da direção na
+  lista. Dados por hora pedidos na previsão: `precipitation`, `wind_gusts_10m`, `wind_direction_10m`; previsões
+  salvas antes disso mostram "—".
 - **O mapa tem só as camadas Nuvens e Vento**, ambas com dados reais. Radar de chuva, Temperatura e Precipitação
   já foram integradas (RainViewer e grade da Open-Meteo) e removidas a pedido, porque o resultado não agradou.
   Não recolocar sem pedido. Nunca simular dados no mapa.

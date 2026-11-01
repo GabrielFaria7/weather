@@ -70,7 +70,7 @@ python3 -m http.server -d site 8000
 ```
 Depois, abra http://127.0.0.1:8000 no navegador.
 
-O painel web tem: clima atual, previsão por hora com gráfico, 10 dias (clique em um dia para ver
+O painel web tem: clima atual, previsão por hora com gráfico de temperatura, chuva ou vento, 10 dias (clique em um dia para ver
 detalhes), indicadores (UV, pressão, visibilidade, sol...), qualidade do ar (índice brasileiro IQAr ou europeu EAQI),
 alertas oficiais do INMET e automáticos,
 mapa com vento e nuvens animados, cidades favoritas, °C/°F, modo claro/escuro e localização atual.
@@ -148,6 +148,7 @@ A cada push no `main` (e em cada pull request), o GitHub Actions roda os dois so
 | `site/js/servico.js` | Consulta a Open-Meteo direto do navegador (camada de dados) |
 | `site/js/painel.js` | Organiza os dados da API no formato do painel |
 | `site/js/avisos.js` | Calcula os alertas automáticos (chuva, vento, calor, frio) |
+| `site/js/seriesPorHora.js` | Prepara os gráficos da previsão por hora (temperatura, chuva e vento) |
 | `site/js/iqar.js` | Calcula o índice brasileiro de qualidade do ar (IQAr, CONAMA 506/2024) |
 | `site/js/alertasOficiais.js` | Escolhe os alertas oficiais do INMET que valem para a cidade |
 | `site/js/descricoes.js` | Traduz o código do tempo para português |
