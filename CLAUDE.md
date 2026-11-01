@@ -28,6 +28,10 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   (`css/app.css`, `js/main.js`, logo com `href="./"`). Nunca usar caminhos que começam com `/`.
 - Não há servidor próprio: o Python é só o app do terminal. `descricoes.py` continua em Python porque o terminal
   usa; a tabela de descrições existe nas duas linguagens.
+- **Lógica pura fora dos componentes:** o que não depende de Leaflet nem do DOM fica em módulos próprios
+  (`painel.js`, `avisos.js`, `satelites.js`, `gradeVento.js`, `formato.js`, `preferencias.js`, `servico.js`) e tem
+  teste em `tests/js/` (`node:test`; `fetch` e `localStorage` são simulados nos testes). Ao criar lógica nova,
+  seguir esse padrão e escrever o teste junto.
 - **Sem build no front:** HTML/CSS/JS puros. Chart.js e Leaflet vêm de CDN em `site/index.html`.
   Node só é usado para rodar os testes (`node --test`, sem `package.json` nem dependências); não migrar para
   React/Vite sem pedido explícito.
@@ -44,18 +48,18 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   Não recolocar sem pedido. Nunca simular dados no mapa.
 - **Vento animado:** `buscarVentoGrade` (`servico.js`) pede à Open-Meteo, pelo navegador, uma grade de
   13 × 13 pontos (±3°, passo 0,5°) para as próximas 24 h, só quando o usuário liga a camada (cache de 30 min).
-  `mapa.js` converte velocidade/direção em u/v e desenha com `leaflet-velocity@1.9.2` (última versão MIT;
+  `quadroVento` (`gradeVento.js`) converte velocidade/direção em u/v e `mapa.js` desenha com `leaflet-velocity@1.9.2` (última versão MIT;
   a 2.x mudou de licença). A interface diz que é previsão do modelo, não medição em tempo real.
-- **Nuvens animadas:** imagens reais de satélite, todas grátis, sem chave e com CORS. `SATELITES` (`mapa.js`) escolhe
-  a fonte pela longitude da cidade: GOES-West e GOES-East GeoColor pela NASA GIBS (WMTS, 12 quadros a cada 10 min,
+- **Nuvens animadas:** imagens reais de satélite, todas grátis, sem chave e com CORS. `SATELITES` e `satelitePara`
+  (`satelites.js`) escolhem a fonte pela longitude da cidade: GOES-West e GOES-East GeoColor pela NASA GIBS (WMTS, 12 quadros a cada 10 min,
   ~1 h de atraso); Meteosat MTG infravermelho `mtg_fd:ir105_hrfi` na Europa/África/Oriente Médio (−15° a 60°) e o
   mosaico global infravermelho `mumi:worldcloudmap_ir108` na Ásia/Oceania (60° a 180°, 8 quadros a cada 3 h), ambos
   pelo WMS da EUMETSAT (`view.eumetsat.int/geoserver`). `buscarHorariosSatelite` (`servico.js`) lê os horários
   (DescribeDomains na GIBS, GetCapabilities da camada na EUMETSAT) e `ultimosHorarios` pega só os últimos.
   `urlTileSatelite` devolve uma função que monta a URL de cada tile (na EUMETSAT, calcula o bbox em EPSG:3857).
   `mapa.js` cria uma `L.gridLayer` por horário num painel próprio (`nuvens`, fora do `.leaflet-tile-pane`, que
-  recebe o filtro de escurecer o mapa) e transforma o brilho de cada pixel em transparência (limites por satélite em
-  `brilho`), para sobrar só as nuvens. Pixels de tom quente (luzes das cidades à noite no GeoColor, deserto de dia)
+  recebe o filtro de escurecer o mapa); `deixarSoNuvens` (`satelites.js`) transforma o brilho de cada pixel em
+  transparência (limites por satélite em `brilho`), para sobrar só as nuvens. Pixels de tom quente (luzes das cidades à noite no GeoColor, deserto de dia)
   são descartados. No MTG não usar `rgb_geocolour`: à noite as luzes das cidades grandes ficam brancas e parecem
   nuvens. Acima de 65° de latitude mostra aviso de sem cobertura.
 - `.container` usa `padding-inline` (não `padding`), senão zera o espaço vertical do `<main>`.

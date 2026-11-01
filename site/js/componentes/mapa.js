@@ -1,6 +1,8 @@
 import { buscarHorariosSatelite, buscarVentoGrade, urlTileSatelite } from "../servico.js";
 import { direcao, duracao, esc, hora, horaNaCidade, vento } from "../formato.js";
+import { indiceNaGrade, quadroVento } from "../gradeVento.js";
 import { iconeUI } from "../icones.js";
+import { deixarSoNuvens, SATELITES, satelitePara } from "../satelites.js";
 
 const CAMADAS = [
   { id: "nuvens", nome: "Nuvens" },
@@ -15,38 +17,7 @@ const VENTO_MAXIMO_KMH = 54;
 const VALIDADE_DADOS_MS = 30 * 60 * 1000;
 const VALIDADE_SATELITE_MS = 5 * 60 * 1000;
 
-const CREDITO_GIBS = 'Satélite: <a href="https://www.earthdata.nasa.gov/gibs" target="_blank" rel="noopener">NOAA GOES · NASA GIBS</a>';
-const CREDITO_EUMETSAT = 'Satélite: <a href="https://view.eumetsat.int/" target="_blank" rel="noopener">© EUMETSAT</a>';
-const AVISO_INFRAVERMELHO = " Por serem infravermelhas, funcionam de dia e de noite, mas áreas muito frias, como montanhas "
-  + "altas e neve, também podem aparecer claras.";
-const SATELITES = [
-  {
-    id: "GOES-West", fonte: "gibs", camada: "GOES-West_ABI_GeoColor", oeste: -180, leste: -110, quadros: 12,
-    descricao: "do satélite <strong>GOES-West</strong> (NOAA, via NASA GIBS)", frequencia: "10 minutos",
-    atraso: "cerca de 1 hora", brilho: [80, 210], credito: CREDITO_GIBS,
-  },
-  {
-    id: "GOES-East", fonte: "gibs", camada: "GOES-East_ABI_GeoColor", oeste: -110, leste: -15, quadros: 12,
-    descricao: "do satélite <strong>GOES-East</strong> (NOAA, via NASA GIBS)", frequencia: "10 minutos",
-    atraso: "cerca de 1 hora", brilho: [80, 210], credito: CREDITO_GIBS,
-  },
-  {
-    id: "MTG", fonte: "eumetsat", camada: "mtg_fd:ir105_hrfi", oeste: -15, leste: 60, quadros: 12,
-    descricao: "infravermelhas do satélite <strong>Meteosat MTG</strong> (EUMETSAT)", frequencia: "10 minutos",
-    atraso: "cerca de 30 minutos", brilho: [70, 190], credito: CREDITO_EUMETSAT, aviso: AVISO_INFRAVERMELHO,
-  },
-  {
-    id: "Mosaico", fonte: "eumetsat", camada: "mumi:worldcloudmap_ir108", oeste: 60, leste: 180, quadros: 8,
-    descricao: "infravermelhas do <strong>mosaico de satélites geoestacionários</strong> da EUMETSAT",
-    frequencia: "3 horas", atraso: "menos de 1 hora", brilho: [95, 200], credito: CREDITO_EUMETSAT,
-    aviso: AVISO_INFRAVERMELHO,
-  },
-];
-const LATITUDE_MAXIMA_SATELITE = 65;
 const ZOOM_MAXIMO_NUVENS = 8;
-const OPACIDADE_NUVEM_DENSA = 195;
-const LIMIAR_COR_QUENTE = 12;
-const FAIXA_COR_QUENTE = 18;
 
 let mapa = null;
 let local = null;
@@ -333,34 +304,6 @@ async function dadosVento() {
   return dados;
 }
 
-function quadroVento({ grade, horas, pontos }, indice) {
-  const u = [];
-  const v = [];
-  pontos.forEach((ponto) => {
-    const ms = (ponto.velocidade[indice] ?? 0) / 3.6;
-    const radianos = ((ponto.direcao[indice] ?? 0) * Math.PI) / 180;
-    u.push(-ms * Math.sin(radianos));
-    v.push(-ms * Math.cos(radianos));
-  });
-  const cabecalho = {
-    parameterCategory: 2,
-    lo1: grade.oeste,
-    la1: grade.norte,
-    lo2: grade.oeste + (grade.colunas - 1) * grade.passo,
-    la2: grade.norte - (grade.linhas - 1) * grade.passo,
-    dx: grade.passo,
-    dy: grade.passo,
-    nx: grade.colunas,
-    ny: grade.linhas,
-    refTime: new Date(horas[indice] * 1000).toISOString(),
-    forecastTime: 0,
-  };
-  return [
-    { header: { ...cabecalho, parameterNumber: 2 }, data: u },
-    { header: { ...cabecalho, parameterNumber: 3 }, data: v },
-  ];
-}
-
 function isoLocal(dados, indice) {
   return new Date((dados.horas[indice] + dados.deslocamento) * 1000).toISOString();
 }
@@ -384,20 +327,13 @@ function lerVento(latlng) {
   if (!leitura) return;
   ultimoPonto = latlng;
   const { grade, pontos } = ventoCarregado.dados;
-  const linha = Math.round((grade.norte - latlng.lat) / grade.passo);
-  const coluna = Math.round((((latlng.lng - grade.oeste) % 360) + 360) % 360 / grade.passo);
-  if (linha < 0 || linha >= grade.linhas || coluna < 0 || coluna >= grade.colunas) {
+  const indice = indiceNaGrade(grade, latlng.lat, latlng.lng);
+  if (indice < 0) {
     leitura.textContent = "Fora da área com dados de vento";
     return;
   }
-  const ponto = pontos[linha * grade.colunas + coluna];
+  const ponto = pontos[indice];
   leitura.textContent = `${vento(ponto.velocidade[indiceQuadro], ctx.vento)} vindo do ${direcao(ponto.direcao[indiceQuadro], true)}`;
-}
-
-function satelitePara({ latitude, longitude }) {
-  if (Math.abs(latitude) > LATITUDE_MAXIMA_SATELITE) return null;
-  const lon = ((longitude + 540) % 360) - 180;
-  return SATELITES.find((s) => lon >= s.oeste && lon < s.leste) ?? null;
 }
 
 async function ligarNuvens() {
@@ -472,21 +408,11 @@ function criarCamadaNuvens(satelite, url, opacidade) {
   return camada;
 }
 
-function desenharNuvens(tile, imagem, [semNuvem, nuvemDensa]) {
+function desenharNuvens(tile, imagem, brilho) {
   const pincel = tile.getContext("2d", { willReadFrequently: true });
   pincel.drawImage(imagem, 0, 0, 256, 256);
   const pixels = pincel.getImageData(0, 0, 256, 256);
-  const d = pixels.data;
-  for (let i = 0; i < d.length; i += 4) {
-    const brilho = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-    const quente = Math.min(1, Math.max(0, (d[i] - d[i + 2] - LIMIAR_COR_QUENTE) / FAIXA_COR_QUENTE));
-    const forca = Math.min(1, Math.max(0, (brilho - semNuvem) / (nuvemDensa - semNuvem))) * (1 - quente);
-    const tom = 175 + 80 * forca;
-    d[i] = tom;
-    d[i + 1] = tom;
-    d[i + 2] = tom + (255 - tom) * 0.4;
-    d[i + 3] = (d[i + 3] / 255) * forca * OPACIDADE_NUVEM_DENSA;
-  }
+  deixarSoNuvens(pixels.data, brilho);
   pincel.putImageData(pixels, 0, 0);
 }
 

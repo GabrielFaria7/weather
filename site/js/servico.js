@@ -102,7 +102,7 @@ export async function buscarVentoGrade(local, opcoes) {
 
 const isoSatelite = (data) => data.toISOString().replace(/\.\d{3}Z$/, "Z");
 
-function ultimosHorarios(dominio, quantidade) {
+export function ultimosHorarios(dominio, quantidade) {
   const horarios = dominio.split(",").flatMap((trecho) => {
     const [inicio, fim, periodo] = trecho.trim().split("/");
     if (!fim) return [Date.parse(inicio)];

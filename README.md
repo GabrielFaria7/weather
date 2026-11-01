@@ -99,7 +99,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-JavaScript (montagem do painel e alertas) — usa o executor de testes que já vem no Node.js 22 ou mais novo:
+JavaScript (painel, alertas, consultas às APIs, satélites, vento, formatação e preferências) — usa o executor de testes que já vem no Node.js 22 ou mais novo:
 
 ```bash
 node --test "tests/js/*.test.mjs"
@@ -122,6 +122,9 @@ A cada push no `main` (e em cada pull request), o GitHub Actions roda os dois so
 | `site/js/painel.js` | Organiza os dados da API no formato do painel |
 | `site/js/avisos.js` | Calcula os alertas automáticos (chuva, vento, calor, frio) |
 | `site/js/descricoes.js` | Traduz o código do tempo para português |
+| `site/js/satelites.js` | Escolhe o satélite das nuvens pela região e deixa só as nuvens visíveis na imagem |
+| `site/js/gradeVento.js` | Converte a grade de vento para o formato da animação e acha o ponto sob o mouse |
+| `site/js/formato.js` / `preferencias.js` | Formatação (temperatura, vento, horas) e preferências/favoritos salvos no navegador |
 | `site/js/componentes/` | Uma parte da tela por arquivo (card atual, por hora, 10 dias, mapa...) |
 | `tests/` | Testes em Python (`pytest`) e em JavaScript (`tests/js/`, `node --test`) |
 
