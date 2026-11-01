@@ -43,8 +43,18 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
 - **Nenhum servidor consulta a Open-Meteo na versão web.** Quando o painel rodava no Render gratuito, o IP de
   saída era compartilhado com outros sites e a Open-Meteo respondia `429 Daily API request limit exceeded`.
   Por isso o navegador de cada visitante faz as consultas (a Open-Meteo libera CORS). Não voltar a ter servidor.
-- **Alertas são automáticos, não oficiais.** `site/js/avisos.js` calcula a partir da previsão e a interface
-  deixa isso claro, com link para o INMET. Nunca apresentar como alerta oficial.
+- **Dois tipos de alerta, sempre separados na tela.** Os **oficiais** vêm do INMET; os **automáticos**
+  (`site/js/avisos.js`) são calculados a partir da previsão e nunca podem ser apresentados como oficiais.
+- **Alertas oficiais do INMET:** `buscarAlertasOficiais` (`servico.js`) só consulta para lugares dentro do Brasil
+  (`noBrasil`) a API `https://apiprevmet3.inmet.gov.br/avisos/ativos` (pelo navegador; ela libera CORS para o site).
+  O firewall do INMET derruba quem não é navegador e quem acessa de fora do Brasil (curl, servidores, este ambiente
+  na nuvem), então não dá para testar a API daqui: os testes usam a cópia real `tests/js/dados/inmet-avisos-2026-11-01.json`
+  (sem os ícones). `alertasOficiaisPara` (`alertasOficiais.js`) inclui o alerta se a cidade estiver na lista oficial
+  de municípios (nome + estado convertido em UF) **ou** dentro do polígono do alerta (cobre "Usar minha localização");
+  ignora encerrados e terminados, fica só com a última `id_sequencia` de cada aviso e ordena: em vigor, mais grave
+  (6 Perigo Potencial = amarelo, 7 Perigo = laranja, 8 Grande Perigo = vermelho), mais próximo. Horários do INMET
+  são de Brasília (UTC−3). No painel, `alertas_oficiais` é `undefined` fora do Brasil (sem seção), `null` se a
+  consulta falhou (mensagem) ou a lista. O card mostra os 2 primeiros e o resto em "Mais N alertas oficiais".
 - **O mapa tem só as camadas Nuvens e Vento**, ambas com dados reais. Radar de chuva, Temperatura e Precipitação
   já foram integradas (RainViewer e grade da Open-Meteo) e removidas a pedido, porque o resultado não agradou.
   Não recolocar sem pedido. Nunca simular dados no mapa.
@@ -66,7 +76,7 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   nuvens. Acima de 65° de latitude mostra aviso de sem cobertura.
 - **Segurança (`site/index.html`):** os scripts e o CSS de CDN têm `integrity` (SRI, sha384) + `crossorigin`, com
   versão exata na URL; a `<meta http-equiv="Content-Security-Policy">` só libera os domínios usados (scripts:
-  cdnjs e unpkg; conexões: Open-Meteo, NASA GIBS e EUMETSAT; imagens: tiles do OpenStreetMap, GIBS e EUMETSAT).
+  cdnjs e unpkg; conexões: Open-Meteo, INMET, NASA GIBS e EUMETSAT; imagens: tiles do OpenStreetMap, GIBS e EUMETSAT).
   O único script inline (o do tema, no `<head>`) é liberado pelo hash sha256 dele. `tests/js/seguranca.test.mjs`
   confere tudo isso: ao editar o script do tema, o teste falha e mostra o hash novo para pôr na CSP; ao trocar a
   versão de uma biblioteca, recalcular o `integrity` (`curl -sL URL | openssl dgst -sha384 -binary | openssl base64 -A`)

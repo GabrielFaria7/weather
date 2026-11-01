@@ -38,7 +38,8 @@ test("scripts e estilos de CDN têm verificação de integridade", () => {
 test("a CSP libera todos os domínios que o site usa", () => {
   const conexoes = diretiva("connect-src");
   for (const dominio of ["https://api.open-meteo.com", "https://geocoding-api.open-meteo.com",
-    "https://air-quality-api.open-meteo.com", "https://gibs.earthdata.nasa.gov", "https://view.eumetsat.int"]) {
+    "https://air-quality-api.open-meteo.com", "https://apiprevmet3.inmet.gov.br", "https://gibs.earthdata.nasa.gov",
+    "https://view.eumetsat.int"]) {
     assert.ok(conexoes.includes(dominio), `connect-src sem ${dominio}`);
   }
   const imagens = diretiva("img-src");

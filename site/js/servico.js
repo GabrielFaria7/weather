@@ -1,9 +1,11 @@
+import { alertasOficiaisPara, noBrasil } from "./alertasOficiais.js";
 import { montarPainel } from "./painel.js";
 import { previsoesSalvas } from "./preferencias.js";
 
 const URL_GEOCODIFICACAO = "https://geocoding-api.open-meteo.com/v1/search";
 const URL_PREVISAO = "https://api.open-meteo.com/v1/forecast";
 const URL_QUALIDADE_AR = "https://air-quality-api.open-meteo.com/v1/air-quality";
+const URL_ALERTAS_INMET = "https://apiprevmet3.inmet.gov.br/avisos/ativos";
 const TEMPO_LIMITE_MS = 10000;
 const PASSO_GRADE_VENTO = 0.5;
 const RAIO_GRADE_VENTO = 3;
@@ -161,6 +163,17 @@ export function urlTileSatelite({ fonte, camada }, horario) {
   };
 }
 
+export async function buscarAlertasOficiais(local, { signal } = {}) {
+  if (!noBrasil(local)) return undefined;
+  try {
+    const resposta = await fetch(URL_ALERTAS_INMET, { signal: sinalComLimite(signal) });
+    if (!resposta.ok) return null;
+    return alertasOficiaisPara(await resposta.json(), local);
+  } catch {
+    return null;
+  }
+}
+
 function previsaoSalvaRecente(posicao) {
   const salva = previsoesSalvas.buscar(posicao);
   return salva && Date.now() - salva.quando < VALIDADE_PREVISAO_SALVA_MS ? salva : null;
@@ -169,6 +182,7 @@ function previsaoSalvaRecente(posicao) {
 export async function buscarPrevisao(local, opcoes) {
   const posicao = { latitude: local.latitude, longitude: local.longitude };
   const dadosDoLocal = { nome: local.nome, estado: local.estado, pais: local.pais, ...posicao };
+  const alertasOficiais = buscarAlertasOficiais(dadosDoLocal, opcoes);
   let previsao;
   let ar;
   try {
@@ -181,10 +195,11 @@ export async function buscarPrevisao(local, opcoes) {
   } catch (erro) {
     const salva = erro.name === "AbortError" ? null : previsaoSalvaRecente(posicao);
     if (!salva) throw erro;
-    return { ...montarPainel(dadosDoLocal, salva.previsao, salva.ar), salvaEm: salva.quando, motivo: erro.message };
+    const painel = montarPainel(dadosDoLocal, salva.previsao, salva.ar);
+    return { ...painel, alertas_oficiais: await alertasOficiais, salvaEm: salva.quando, motivo: erro.message };
   }
 
   const painel = montarPainel(dadosDoLocal, previsao, ar);
   previsoesSalvas.guardar(posicao, previsao, ar);
-  return painel;
+  return { ...painel, alertas_oficiais: await alertasOficiais };
 }

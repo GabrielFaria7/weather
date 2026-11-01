@@ -12,6 +12,7 @@ const ARQUIVOS_DO_SITE = [
   "icone-192.png",
   "icone-512.png",
   "icone-mascaravel-512.png",
+  "js/alertasOficiais.js",
   "js/avisos.js",
   "js/componentes/alertas.js",
   "js/componentes/atual.js",

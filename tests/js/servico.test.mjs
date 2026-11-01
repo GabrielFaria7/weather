@@ -184,9 +184,10 @@ test("grade do vento perto da linha de data e do polo", async () => {
 test("previsão completa monta o painel no navegador", async () => {
   simularFetch((url) => (url.hostname.startsWith("air-quality")
     ? { corpo: { current: { european_aqi: 55, pm2_5: 9, pm10: 15, ozone: 60, nitrogen_dioxide: 8 } } }
-    : { corpo: previsaoFalsa() }));
+    : url.hostname.endsWith("inmet.gov.br") ? { corpo: { hoje: [], futuro: [] } } : { corpo: previsaoFalsa() }));
   const painel = await buscarPrevisao({ nome: "Manaus", estado: "Amazonas", pais: "Brasil", latitude: -3.1, longitude: -60 });
-  assert.equal(pedidos.length, 2);
+  assert.deepEqual(pedidos.map((p) => p.hostname).sort(), ["air-quality-api.open-meteo.com", "api.open-meteo.com", "apiprevmet3.inmet.gov.br"]);
+  assert.deepEqual(painel.alertas_oficiais, []);
   assert.equal(painel.local.nome, "Manaus");
   assert.equal(painel.qualidade_ar.nivel, "Moderada");
   assert.equal(painel.por_hora.length, 24);
