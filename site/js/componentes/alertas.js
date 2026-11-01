@@ -84,6 +84,14 @@ function rodape(dados) {
     Consulte o serviço meteorológico oficial do seu país.`;
 }
 
+function indicarRolagem(corpo) {
+  const marcar = () => corpo.classList.toggle("tem-mais", corpo.scrollHeight - corpo.scrollTop - corpo.clientHeight > 4);
+  corpo.addEventListener("scroll", marcar, { passive: true });
+  corpo.addEventListener("toggle", marcar, true);
+  if (typeof ResizeObserver === "function") new ResizeObserver(marcar).observe(corpo);
+  requestAnimationFrame(marcar);
+}
+
 export function renderizarAlertas(el, dados) {
   const comOficiais = dados.alertas_oficiais !== undefined;
   el.innerHTML = `
@@ -92,8 +100,11 @@ export function renderizarAlertas(el, dados) {
         <h2 id="titulo-alertas">Alertas meteorológicos</h2>
         ${comOficiais ? "" : '<span class="selo">Automático</span>'}
       </header>
-      ${secaoOficial(dados.alertas_oficiais)}
-      ${secaoAutomatica(dados.avisos, comOficiais)}
-      <p class="card-fonte">${rodape(dados)}</p>
+      <div class="alertas-corpo">
+        ${secaoOficial(dados.alertas_oficiais)}
+        ${secaoAutomatica(dados.avisos, comOficiais)}
+        <p class="card-fonte">${rodape(dados)}</p>
+      </div>
     </section>`;
+  indicarRolagem(el.querySelector(".alertas-corpo"));
 }

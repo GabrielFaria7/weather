@@ -103,6 +103,12 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
 - **Emendas no mapa:** `.mapa-leaflet .leaflet-tile { outline: 1px solid transparent; }` (`app.css`) evita um fio
   claro entre os tiles do mapa em telas com escala fracionária (celulares com 2x/2,625x e notebooks a 150%), com ou
   sem camada ligada. Não remover. Testado: aumentar o tile para 257 px ou trocar o fundo não resolvem.
+- **Layout do topo no desktop (≥ 1025 px):** a coluna da direita (`.area-lateral`: alertas + favoritos) ocupa duas
+  linhas e a Previsão por hora fica à esquerda, embaixo do card principal (`grid-row: span 2` e `.area-horas` com
+  span 8). `.area-lateral` tem `contain: size`, então quem define a altura é a coluna da esquerda; os alertas rolam
+  dentro do card (`.alertas-corpo`) e ganham esmaecido embaixo (`.tem-mais`, marcado em `alertas.js`) quando há mais
+  conteúdo. Sem isso, muitos alertas esticavam o card principal e deixavam um buraco vazio enorme. Abaixo de
+  1025 px tudo empilha como antes.
 - `.container` usa `padding-inline` (não `padding`), senão zera o espaço vertical do `<main>`.
 - A linha superior do cabeçalho tem `z-index` para as sugestões da busca abrirem por cima das abas.
 

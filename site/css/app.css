@@ -637,6 +637,22 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
 
+@media (min-width: 1025px) {
+  .area-lateral { contain: size; grid-row: span 2; }
+  .area-horas { grid-column: span 8; }
+  .area-lateral > * { height: auto; min-height: 0; display: flex; flex-direction: column; }
+  .area-lateral > [data-area="alertas"] { flex: 1 1 0; }
+  .area-lateral > [data-area="favoritos"] { flex: 0 1 auto; max-height: 45%; }
+  .area-lateral .card { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .alertas-corpo, .area-lateral .favoritos-lista {
+    flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+    scrollbar-width: thin; scrollbar-color: var(--borda) transparent;
+  }
+  .alertas-corpo { display: flex; flex-direction: column; margin-right: -10px; padding-right: 10px; }
+  .alertas-corpo > .card-fonte { margin-top: auto; padding-top: 14px; }
+  .alertas-corpo.tem-mais { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent); }
+}
+
 @media (max-width: 1280px) {
   .area-dias { grid-column: span 7; }
   .area-indicadores { grid-column: span 5; }
