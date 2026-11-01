@@ -1,5 +1,6 @@
 import { direcao, duracao, hora, minutosAgoraNaCidade, minutosDoDia, porcentagem, temperatura, vento } from "../formato.js";
 import { iconeUI } from "../icones.js";
+import { indiceEscolhido } from "./qualidadeAr.js";
 
 function nivelUV(uv) {
   if (uv < 3) return "Baixo";
@@ -55,6 +56,7 @@ function card({ icone, titulo, valor, unidade = "", visual = "", legenda = "" })
 
 export function renderizarIndicadores(el, dados, ctx) {
   const { atual, dias, qualidade_ar: ar, fuso } = dados;
+  const indiceAr = indiceEscolhido(ar, ctx.indiceAr);
   const hoje = dias[0];
   const km = atual.visibilidade == null ? null : atual.visibilidade / 1000;
 
@@ -112,9 +114,9 @@ export function renderizarIndicadores(el, dados, ctx) {
     }),
     card({
       icone: "folha", titulo: "Qualidade do ar",
-      valor: ar?.indice == null ? "—" : ar.indice, unidade: ar?.indice == null ? "" : "AQI",
-      visual: escala(((ar?.indice ?? 0) / 100) * 100, "escala-ar"),
-      legenda: ar?.nivel ?? "Indisponível no momento",
+      valor: indiceAr?.indice ?? "—", unidade: indiceAr?.sigla ?? "",
+      visual: escala(indiceAr?.porcento ?? 0, indiceAr?.tipo === "iqar" ? "escala-iqar" : "escala-ar"),
+      legenda: indiceAr?.nivel ?? "Indisponível no momento",
     }),
   ];
 

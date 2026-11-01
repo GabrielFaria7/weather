@@ -29,6 +29,7 @@ const ARQUIVOS_DO_SITE = [
   "js/gradeVento.js",
   "js/graficos.js",
   "js/icones.js",
+  "js/iqar.js",
   "js/main.js",
   "js/painel.js",
   "js/preferencias.js",

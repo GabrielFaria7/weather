@@ -71,13 +71,18 @@ python3 -m http.server -d site 8000
 Depois, abra http://127.0.0.1:8000 no navegador.
 
 O painel web tem: clima atual, previsão por hora com gráfico, 10 dias (clique em um dia para ver
-detalhes), indicadores (UV, pressão, visibilidade, sol...), qualidade do ar, alertas oficiais do INMET e automáticos,
+detalhes), indicadores (UV, pressão, visibilidade, sol...), qualidade do ar (índice brasileiro IQAr ou europeu EAQI),
+alertas oficiais do INMET e automáticos,
 mapa com vento e nuvens animados, cidades favoritas, °C/°F, modo claro/escuro e localização atual.
 
 > **Instale como aplicativo:** no Chrome/Edge, use o ícone de instalar na barra de endereço (ou
 > **Configurações → Instalar como aplicativo** no painel); no iPhone, **Compartilhar → Adicionar à Tela de Início**.
 > Sem internet, o app abre normalmente e mostra a última previsão salva de cada cidade (com aviso de quando ela é).
 
+> **Qualidade do ar:** por padrão o painel mostra o **IQAr**, o índice oficial do Brasil (Resolução CONAMA 506/2024),
+> calculado com as médias de 24 h, 8 h e 1 h que a norma exige a partir da estimativa do modelo CAMS (Open-Meteo).
+> Nas configurações dá para trocar para o índice europeu (EAQI). É estimativa de modelo, não medição de estação.
+>
 > **Alertas:** para cidades do Brasil, o painel mostra os **alertas oficiais do INMET** (avisos ativos da área da
 > cidade, com severidade, período, riscos e o que fazer). Abaixo deles ficam os alertas **automáticos**, calculados
 > a partir da previsão, que **não são oficiais**.
@@ -143,6 +148,7 @@ A cada push no `main` (e em cada pull request), o GitHub Actions roda os dois so
 | `site/js/servico.js` | Consulta a Open-Meteo direto do navegador (camada de dados) |
 | `site/js/painel.js` | Organiza os dados da API no formato do painel |
 | `site/js/avisos.js` | Calcula os alertas automáticos (chuva, vento, calor, frio) |
+| `site/js/iqar.js` | Calcula o índice brasileiro de qualidade do ar (IQAr, CONAMA 506/2024) |
 | `site/js/alertasOficiais.js` | Escolhe os alertas oficiais do INMET que valem para a cidade |
 | `site/js/descricoes.js` | Traduz o código do tempo para português |
 | `site/js/satelites.js` | Escolhe o satélite das nuvens pela região e deixa só as nuvens visíveis na imagem |

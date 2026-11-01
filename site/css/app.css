@@ -451,6 +451,7 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 .escala { position: relative; display: block; height: 6px; border-radius: 999px; }
 .escala-uv { background: linear-gradient(90deg, #22C55E, #EAB308 30%, #F97316 55%, #EF4444 75%, #A855F7); }
 .escala-ar { background: linear-gradient(90deg, #22C55E, #84CC16 20%, #EAB308 40%, #F97316 60%, #EF4444 80%, #7E22CE); }
+.escala-iqar { background: linear-gradient(90deg, #16A34A 0 20%, #EAB308 20% 40%, #F97316 40% 60%, #DC2626 60% 80%, #7E22CE 80%); }
 .escala-marca {
   position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%;
   background: var(--superficie); border: 2px solid var(--texto); transform: translate(-50%, -50%);
@@ -482,7 +483,10 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 .ar-moderada { --cor: #CA8A04; }
 .ar-ruim { --cor: #EA580C; }
 .ar-muitoruim { --cor: #DC2626; }
-.ar-extremamenteruim { --cor: #7E22CE; }
+.ar-extremamenteruim, .ar-pessima { --cor: #7E22CE; }
+.ar-principal { font-size: 13px; color: var(--texto-2); margin-top: 2px; }
+.ar-poluentes dt span { font-weight: 500; }
+.ar-poluentes .ar-destaque { box-shadow: inset 0 0 0 1.5px var(--cor); }
 
 .ar-poluentes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 18px 0 0; }
 .ar-poluentes div { padding: 10px 12px; border-radius: var(--raio-p); background: var(--superficie-2); }

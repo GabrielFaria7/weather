@@ -28,6 +28,9 @@ export const preferencias = {
   get hora() { return ler("hora", "24"); },
   set hora(v) { salvar("hora", v); },
 
+  get indiceAr() { return ler("indiceAr", "iqar"); },
+  set indiceAr(v) { salvar("indiceAr", v); },
+
   get ultimoLocal() { return ler("ultimo", null); },
   set ultimoLocal(v) { salvar("ultimo", v); },
 };

@@ -1,5 +1,6 @@
 import { gerarAvisos } from "./avisos.js";
 import { descrever } from "./descricoes.js";
+import { calcularIqar, concentracoesIqar } from "./iqar.js";
 
 const HORAS_NO_PAINEL = 24;
 const BLOCOS_DA_PREVISAO = ["current", "hourly", "daily"];
@@ -49,13 +50,17 @@ function montarDias(diario, todasAsHoras) {
 
 function montarQualidadeAr(ar) {
   if (!ar) return null;
+  const atual = ar.current ?? ar;
   return {
-    indice: ar.european_aqi ?? null,
-    nivel: classificarQualidadeAr(ar.european_aqi),
-    pm2_5: ar.pm2_5 ?? null,
-    pm10: ar.pm10 ?? null,
-    ozonio: ar.ozone ?? null,
-    dioxido_nitrogenio: ar.nitrogen_dioxide ?? null,
+    indice: atual.european_aqi ?? null,
+    nivel: classificarQualidadeAr(atual.european_aqi),
+    iqar: ar.hourly ? calcularIqar(concentracoesIqar(ar.hourly, atual.time)) : null,
+    pm2_5: atual.pm2_5 ?? null,
+    pm10: atual.pm10 ?? null,
+    ozonio: atual.ozone ?? null,
+    dioxido_nitrogenio: atual.nitrogen_dioxide ?? null,
+    dioxido_enxofre: atual.sulphur_dioxide ?? null,
+    monoxido_carbono: atual.carbon_monoxide ?? null,
   };
 }
 

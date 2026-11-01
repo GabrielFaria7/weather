@@ -31,7 +31,7 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
 - Não há servidor próprio: o Python é só o app do terminal. `descricoes.py` continua em Python porque o terminal
   usa; a tabela de descrições existe nas duas linguagens.
 - **Lógica pura fora dos componentes:** o que não depende de Leaflet nem do DOM fica em módulos próprios
-  (`painel.js`, `avisos.js`, `satelites.js`, `gradeVento.js`, `formato.js`, `preferencias.js`, `servico.js`) e tem
+  (`painel.js`, `avisos.js`, `iqar.js`, `alertasOficiais.js`, `satelites.js`, `gradeVento.js`, `formato.js`, `preferencias.js`, `servico.js`) e tem
   teste em `tests/js/` (`node:test`; `fetch` e `localStorage` são simulados nos testes). Ao criar lógica nova,
   seguir esse padrão e escrever o teste junto.
 - **Sem build no front:** HTML/CSS/JS puros. Chart.js e Leaflet vêm de CDN em `site/index.html`.
@@ -55,6 +55,17 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   (6 Perigo Potencial = amarelo, 7 Perigo = laranja, 8 Grande Perigo = vermelho), mais próximo. Horários do INMET
   são de Brasília (UTC−3). No painel, `alertas_oficiais` é `undefined` fora do Brasil (sem seção), `null` se a
   consulta falhou (mensagem) ou a lista. O card mostra os 2 primeiros e o resto em "Mais N alertas oficiais".
+- **Qualidade do ar com dois índices:** o painel mostra por padrão o **IQAr brasileiro** e permite trocar para o
+  **EAQI europeu** nas configurações (`preferencias.indiceAr`: `"iqar"` | `"eaqi"`). `iqar.js` segue a Orientação
+  Técnica do MMA de jan/2025 (Resolução CONAMA 506/2024): faixas do Quadro 1 (`POLUENTES_IQAR`), Equação 1 com
+  `Cini` = limite anterior + 1 (ou + 0,1 no CO), arredondamento ",5 vai para o par" (`arredondarPar`) e o maior
+  índice entre os poluentes. As médias exigidas (24 h para MP10, MP2,5 e SO₂; 8 h para O₃ e CO; 1 h para NO₂)
+  são calculadas das horas da Open-Meteo (`past_days: 1`), exigindo 75% das horas da janela; o CO vem em µg/m³ e
+  é convertido para ppm (÷ 1145,6). São estimativas do modelo CAMS, não medição de estação, e o card diz isso.
+  No modo IQAr, o card mostra as médias usadas no cálculo (não o valor da hora), senão o número parece não bater
+  com a faixa. Testes com o exemplo oficial do MMA e uma resposta real de São Paulo
+  (`tests/js/dados/open-meteo-ar-sao-paulo-2026-11-01.json`). Previsões salvas no formato antigo (só `current`)
+  continuam funcionando, sem IQAr.
 - **O mapa tem só as camadas Nuvens e Vento**, ambas com dados reais. Radar de chuva, Temperatura e Precipitação
   já foram integradas (RainViewer e grade da Open-Meteo) e removidas a pedido, porque o resultado não agradou.
   Não recolocar sem pedido. Nunca simular dados no mapa.

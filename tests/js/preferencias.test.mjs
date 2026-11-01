@@ -23,6 +23,7 @@ test("valores padrão das preferências", () => {
   assert.equal(preferencias.unidade, "C");
   assert.equal(preferencias.vento, "kmh");
   assert.equal(preferencias.hora, "24");
+  assert.equal(preferencias.indiceAr, "iqar");
   assert.equal(preferencias.ultimoLocal, null);
   assert.equal(preferencias.tema, null);
 });

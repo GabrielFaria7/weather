@@ -21,6 +21,7 @@ const estado = {
   unidade: preferencias.unidade,
   vento: preferencias.vento,
   hora: preferencias.hora,
+  indiceAr: preferencias.indiceAr,
 };
 
 let numeroDoPedido = 0;
@@ -100,6 +101,7 @@ function contexto() {
     unidade: estado.unidade,
     vento: estado.vento,
     hora: estado.hora,
+    indiceAr: estado.indiceAr,
     favorito: favoritos.contem(estado.dados.local),
   };
 }
@@ -113,7 +115,7 @@ function renderizarConteudo() {
   renderizarPorHora(area("horas"), estado.dados, ctx);
   renderizarDias(area("dias"), estado.dados, ctx);
   renderizarIndicadores(area("indicadores"), estado.dados, ctx);
-  renderizarQualidadeAr(area("ar"), estado.dados);
+  renderizarQualidadeAr(area("ar"), estado.dados, ctx);
   atualizarMapa(ctx);
 }
 

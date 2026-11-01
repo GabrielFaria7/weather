@@ -17,6 +17,15 @@ const LIMITE_MERCATOR = 20037508.342789244;
 const JANELA_SATELITE_MS = 4 * 60 * 60 * 1000;
 const VALIDADE_PREVISAO_SALVA_MS = 7 * 24 * 60 * 60 * 1000;
 
+const POLUENTES = "pm10,pm2_5,ozone,nitrogen_dioxide,sulphur_dioxide,carbon_monoxide";
+const PARAMETROS_QUALIDADE_AR = {
+  timezone: "auto",
+  current: `european_aqi,${POLUENTES}`,
+  hourly: POLUENTES,
+  past_days: 1,
+  forecast_days: 1,
+};
+
 const PARAMETROS_PREVISAO = {
   timezone: "auto",
   forecast_days: 10,
@@ -188,8 +197,8 @@ export async function buscarPrevisao(local, opcoes) {
   try {
     [previsao, ar] = await Promise.all([
       pedirOpenMeteo(URL_PREVISAO, { ...posicao, ...PARAMETROS_PREVISAO }, opcoes),
-      pedirOpenMeteo(URL_QUALIDADE_AR, { ...posicao, current: "european_aqi,pm2_5,pm10,ozone,nitrogen_dioxide" }, opcoes)
-        .then((dados) => dados.current ?? null)
+      pedirOpenMeteo(URL_QUALIDADE_AR, { ...posicao, ...PARAMETROS_QUALIDADE_AR }, opcoes)
+        .then((dados) => (dados.current ? { current: dados.current, hourly: dados.hourly ?? null } : null))
         .catch(() => null),
     ]);
   } catch (erro) {

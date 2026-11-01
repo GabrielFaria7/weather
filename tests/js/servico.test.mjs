@@ -212,7 +212,7 @@ test("previsão que deu certo fica salva no navegador", async () => {
   const salvas = JSON.parse(guardado.get("weather.previsoes"));
   assert.equal(salvas.length, 1);
   assert.deepEqual(salvas[0].local, { latitude: -3.1, longitude: -60 });
-  assert.equal(salvas[0].ar.european_aqi, 25);
+  assert.equal(salvas[0].ar.current.european_aqi, 25);
 });
 
 test("sem internet usa a previsão salva e avisa quando ela é", async () => {
