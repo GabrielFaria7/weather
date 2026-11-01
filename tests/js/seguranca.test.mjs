@@ -8,7 +8,8 @@ const politica = /<meta http-equiv="Content-Security-Policy"\s+content="([^"]+)"
 const diretiva = (nome) => new RegExp(`(?:^|; ?)${nome} ([^;]+)`).exec(politica)?.[1].trim().split(" ") ?? [];
 const recursosExternos = [...html.matchAll(/<(script|link)\b[^>]*(?:src|href)="https:\/\/[^"]+"[^>]*>/g)]
   .map(([tag]) => tag)
-  .filter((tag) => !tag.includes('rel="preconnect"') && !tag.includes("fonts.googleapis.com"));
+  .filter((tag) => tag.startsWith("<script") || tag.includes('rel="stylesheet"'))
+  .filter((tag) => !tag.includes("fonts.googleapis.com"));
 
 test("a página tem Content-Security-Policy", () => {
   assert.ok(politica, "meta Content-Security-Policy não encontrada");

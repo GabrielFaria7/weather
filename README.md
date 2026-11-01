@@ -142,6 +142,8 @@ A cada push no `main` (e em cada pull request), o GitHub Actions roda os dois so
 | `site/js/gradeVento.js` | Converte a grade de vento para o formato da animação e acha o ponto sob o mouse |
 | `site/js/formato.js` / `preferencias.js` | Formatação (temperatura, vento, horas) e preferências/favoritos salvos no navegador |
 | `site/js/componentes/` | Uma parte da tela por arquivo (card atual, por hora, 10 dias, mapa...) |
+| `site/favicon.svg`, `*.png` | Ícone do site e imagem de prévia ao compartilhar o link (Open Graph) |
+| `ferramentas/og-image.html` | Modelo da imagem de prévia (abrir em 1200 × 630 e tirar o print) |
 | `tests/` | Testes em Python (`pytest`) e em JavaScript (`tests/js/`, `node --test`) |
 
 ## Licença

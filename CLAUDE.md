@@ -71,6 +71,11 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   e conferir com o hash oficial; ao usar um domínio novo, incluí-lo na diretiva certa da CSP. Estilos inline
   (`style="..."`) são usados pelo código, por isso `style-src` tem `'unsafe-inline'`. O GitHub Pages não permite
   cabeçalhos HTTP próprios, então a CSP fica na meta tag (sem `frame-ancestors`, que só vale por cabeçalho).
+- **Ícones e prévia do link:** `site/favicon.svg` (mesmo desenho do logo do cabeçalho), `favicon-32.png` e
+  `apple-touch-icon.png` (180 px, sem cantos arredondados, que o iOS arredonda sozinho). A prévia ao compartilhar o
+  link usa as tags Open Graph do `<head>` e `site/og-image.png` (1200 × 630), gerada no Chrome headless a partir de
+  `ferramentas/og-image.html` (abrir em 1200 × 630 e tirar o print da página). `og:image` e `og:url` precisam ser
+  endereços completos. `tests/js/metadados.test.mjs` confere arquivos, tamanhos e tags.
 - `.container` usa `padding-inline` (não `padding`), senão zera o espaço vertical do `<main>`.
 - A linha superior do cabeçalho tem `z-index` para as sugestões da busca abrirem por cima das abas.
 
