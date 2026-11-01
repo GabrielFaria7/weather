@@ -1,3 +1,5 @@
+import { montarPainel } from "./painel.js";
+
 const URL_GEOCODIFICACAO = "https://geocoding-api.open-meteo.com/v1/search";
 const URL_PREVISAO = "https://api.open-meteo.com/v1/forecast";
 const URL_QUALIDADE_AR = "https://air-quality-api.open-meteo.com/v1/air-quality";
@@ -47,22 +49,6 @@ async function pedirOpenMeteo(url, parametros, { signal } = {}) {
   if (!resposta.ok) {
     throw new Error(`O serviço de meteorologia recusou o pedido (código ${resposta.status}).${dados.reason ? ` Detalhe: ${dados.reason}` : ""}`);
   }
-  return dados;
-}
-
-async function pedirServidor(url, corpo) {
-  let resposta;
-  try {
-    resposta = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(corpo),
-    });
-  } catch {
-    throw new Error("Sem conexão com o servidor. Verifique sua internet ou se o web.py está rodando.");
-  }
-  const dados = await resposta.json().catch(() => ({}));
-  if (!resposta.ok) throw new Error(dados.erro || `Algo deu errado ao montar a previsão (código ${resposta.status}).`);
   return dados;
 }
 
@@ -182,9 +168,5 @@ export async function buscarPrevisao(local, opcoes) {
       .catch(() => null),
   ]);
 
-  return pedirServidor("/api/painel", {
-    local: { nome: local.nome, estado: local.estado, pais: local.pais, ...posicao },
-    previsao,
-    ar,
-  });
+  return montarPainel({ nome: local.nome, estado: local.estado, pais: local.pais, ...posicao }, previsao, ar);
 }

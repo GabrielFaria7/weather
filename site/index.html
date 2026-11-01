@@ -21,14 +21,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
   <a class="pular" href="#conteudo">Pular para o conteúdo</a>
 
   <header class="topo">
     <div class="topo-linha container">
-      <a class="logo" href="/" aria-label="Weather, página inicial">
+      <a class="logo" href="./" aria-label="Weather, página inicial">
         <svg class="logo-marca" viewBox="0 0 40 40" aria-hidden="true">
           <defs>
             <linearGradient id="logo-grad" x1="0" y1="0" x2="1" y2="1">
@@ -113,6 +113,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-velocity@1.9.2/dist/leaflet-velocity.min.js"></script>
-  <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>

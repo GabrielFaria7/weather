@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 App de clima em Python com dados da Open-Meteo (gratuita, sem chave). Tem duas interfaces:
-um app de terminal e um painel web chamado **Weather**, publicado no Render.
+um app de terminal e um painel web chamado **Weather**, um site estático publicado no GitHub Pages.
 Repositório: https://github.com/GabrielFaria7/weather (branch principal `main`).
 
 ## Comandos
@@ -10,8 +10,9 @@ Repositório: https://github.com/GabrielFaria7/weather (branch principal `main`)
 python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements-dev.txt
 python main.py                                 # app do terminal
 python web.py                                  # painel web em http://127.0.0.1:5000
-gunicorn web:app --bind 0.0.0.0:8000           # igual ao servidor do Render
-pytest                                         # testes (pytest.ini já ajusta o pythonpath)
+python3 -m http.server -d site 8000            # o painel também roda em qualquer servidor de arquivos
+pytest                                         # testes Python (pytest.ini já ajusta o pythonpath)
+node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, sem dependências)
 ```
 
 - `requirements.txt` tem só o que o servidor precisa (o Render instala ele). Ferramentas de desenvolvimento
@@ -20,19 +21,24 @@ pytest                                         # testes (pytest.ini já ajusta o
 ## Arquitetura
 
 - **Terminal:** `main.py` → `api.py` (`buscar_cidade`, `buscar_clima`, via `requests`) → `interface.py`.
-- **Web:** o **navegador** consulta a Open-Meteo direto (`static/js/servico.js`: geocodificação,
-  previsão de 10 dias e qualidade do ar) e envia os dados brutos para `POST /api/painel` (`web.py`).
-  O servidor monta o painel em Python (`painel.py`, `avisos.py`, `descricoes.py`) e devolve JSON.
-  O front desenha tudo com módulos ES em `static/js/componentes/` (um arquivo por seção da tela).
-- **Sem build no front:** HTML/CSS/JS puros. Chart.js e Leaflet vêm de CDN em `templates/index.html`.
-  Não há Node no ambiente; não migrar para React/Vite sem pedido explícito.
+- **Web (site estático em `site/`):** o **navegador** consulta a Open-Meteo direto (`site/js/servico.js`:
+  geocodificação, previsão de 10 dias e qualidade do ar) e monta o painel ali mesmo (`site/js/painel.js`,
+  `avisos.js`, `descricoes.js`, portados do antigo `painel.py`/`avisos.py`). O front desenha tudo com módulos ES
+  em `site/js/componentes/` (um arquivo por seção da tela). Não existe mais `POST /api/painel`.
+- **Caminhos relativos:** o GitHub Pages serve o site em `/weather/`, então `site/index.html` usa caminhos relativos
+  (`css/app.css`, `js/main.js`, logo com `href="./"`). Nunca usar caminhos que começam com `/`.
+- `web.py` é só um Flask que entrega `site/` (para o Render e para rodar localmente). `descricoes.py` continua em
+  Python porque o app do terminal usa; a tabela de descrições existe nas duas linguagens.
+- **Sem build no front:** HTML/CSS/JS puros. Chart.js e Leaflet vêm de CDN em `site/index.html`.
+  Node só é usado para rodar os testes (`node --test`, sem `package.json` nem dependências); não migrar para
+  React/Vite sem pedido explícito.
 
 ## Decisões importantes (não desfazer)
 
-- **O servidor não deve consultar a Open-Meteo na versão web.** No Render gratuito, o IP de saída
+- **Nenhum servidor consulta a Open-Meteo na versão web.** No Render gratuito, o IP de saída
   é compartilhado com outros sites e a Open-Meteo respondia `429 Daily API request limit exceeded`.
   Por isso o navegador de cada visitante faz as consultas (a Open-Meteo libera CORS).
-- **Alertas são automáticos, não oficiais.** `avisos.py` calcula a partir da previsão e a interface
+- **Alertas são automáticos, não oficiais.** `site/js/avisos.js` calcula a partir da previsão e a interface
   deixa isso claro, com link para o INMET. Nunca apresentar como alerta oficial.
 - **O mapa tem só as camadas Nuvens e Vento**, ambas com dados reais. Radar de chuva, Temperatura e Precipitação
   já foram integradas (RainViewer e grade da Open-Meteo) e removidas a pedido, porque o resultado não agradou.
@@ -58,11 +64,12 @@ pytest                                         # testes (pytest.ini já ajusta o
 
 ## Deploy
 
-- Endereço público: https://weather-jdpm.onrender.com/ (está no topo do README).
-- Render, plano gratuito, configurado por `render.yaml` e `.python-version` (Python 3.12.3).
-- Start command: `gunicorn web:app --bind 0.0.0.0:$PORT --workers 2 --timeout 60`.
-- Deploy automático a cada push no branch `main`, só depois que o GitHub Actions passa
-  (`.github/workflows/testes.yml` roda o pytest; `autoDeployTrigger: checksPass` no `render.yaml`).
+- **GitHub Pages (principal):** https://gabrielfaria7.github.io/weather/ (no topo do README). O workflow
+  `.github/workflows/testes.yml` roda pytest e `node --test`; se passarem, o job `publicar` envia `site/` ao Pages
+  (Settings → Pages → Source: GitHub Actions).
+- **Render (cópia antiga):** https://weather-jdpm.onrender.com/, plano gratuito, `render.yaml` + `.python-version`
+  (Python 3.12.3). Start command: `gunicorn web:app --bind 0.0.0.0:$PORT --workers 2 --timeout 60`. Publica depois
+  que o GitHub Actions passa (`autoDeployTrigger: checksPass`). Dorme sem acessos (~1 min para acordar).
 
 ## Como trabalhar neste projeto
 

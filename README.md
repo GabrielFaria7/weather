@@ -3,9 +3,10 @@
 Mostra o clima de qualquer cidade usando a API gratuita [Open-Meteo](https://open-meteo.com/) (sem chave).
 Tem duas formas de usar: no terminal e num painel web completo.
 
-**Acesse o painel online:** https://weather-jdpm.onrender.com/
+**Acesse o painel online:** https://gabrielfaria7.github.io/weather/
 
-> Hospedado no plano gratuito do Render: se o site estiver "dormindo", a primeira visita pode levar cerca de 1 minuto.
+> O painel é um site estático no GitHub Pages: abre na hora, sem servidor para "acordar".
+> A cópia antiga no Render (https://weather-jdpm.onrender.com/) continua no ar, mas pode levar cerca de 1 minuto para abrir.
 
 ## Prints
 
@@ -68,7 +69,8 @@ Web:
 ```bash
 python web.py
 ```
-Depois, abra http://127.0.0.1:5000 no navegador.
+Depois, abra http://127.0.0.1:5000 no navegador. Como o painel é só HTML, CSS e JavaScript (pasta `site/`),
+qualquer servidor de arquivos também serve, por exemplo `python3 -m http.server -d site 8000`.
 
 O painel web tem: clima atual, previsão por hora com gráfico, 10 dias (clique em um dia para ver
 detalhes), indicadores (UV, pressão, visibilidade, sol...), qualidade do ar, alertas automáticos,
@@ -80,54 +82,55 @@ mapa com vento e nuvens animados, cidades favoritas, °C/°F, modo claro/escuro 
 > nas Américas e Meteosat MTG (EUMETSAT) na Europa, África e Oriente Médio, a cada 10 minutos; na Ásia e Oceania,
 > o mosaico de satélites geoestacionários da EUMETSAT, a cada 3 horas.
 
-## Publicar no Render
+## Publicar
 
-O projeto já vem com o arquivo `render.yaml`, que diz ao [Render](https://render.com) como instalar e iniciar o app.
+O painel web é um **site estático**: a pasta `site/` tem tudo (HTML, CSS e JavaScript). O navegador de cada
+visitante consulta a Open-Meteo e monta o painel sozinho, sem servidor. Assim cada pessoa usa o próprio limite
+gratuito da API e o site abre na hora.
 
-1. Crie uma conta no Render com **Sign in with GitHub**.
-2. Clique em **New → Blueprint** e escolha este repositório.
-3. Confirme em **Apply**. Em poucos minutos o site fica disponível em um endereço `*.onrender.com`.
+**GitHub Pages (principal):** a cada `git push` no `main`, o GitHub Actions roda os testes e, se passarem,
+publica a pasta `site/` em https://gabrielfaria7.github.io/weather/ (`.github/workflows/testes.yml`).
+Para ativar num repositório novo: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 
-A cada `git push` no branch `main`, o Render publica a nova versão sozinho, mas só depois que os testes
-do GitHub Actions passam (`autoDeployTrigger: checksPass` no `render.yaml`).
-No plano gratuito, o site "dorme" após um tempo sem acessos, e a primeira visita depois disso demora um pouco mais.
-
-Na versão web, quem consulta a Open-Meteo é o **navegador de cada visitante**, e não o servidor.
-Assim cada pessoa usa o próprio limite gratuito da API, em vez de dividir o limite do endereço
-de internet compartilhado da hospedagem.
-
-Para rodar localmente do mesmo jeito que no servidor:
-```bash
-gunicorn web:app --bind 0.0.0.0:8000
-```
+**Render (cópia antiga):** o `render.yaml` sobe o `web.py`, um servidor Flask que só entrega os arquivos de `site/`.
+O Render publica depois que os testes passam (`autoDeployTrigger: checksPass`). No plano gratuito ele "dorme" após
+um tempo sem acessos, e a primeira visita depois disso demora cerca de 1 minuto.
 
 ## Testes
 
-Os testes usam ferramentas que não vão para o servidor, então ficam em `requirements-dev.txt`:
+Python (app do terminal e servidor) — as ferramentas de teste ficam em `requirements-dev.txt`:
 
 ```bash
 pip install -r requirements-dev.txt
 pytest
 ```
 
-A cada push no `main` (e em cada pull request), o GitHub Actions roda os testes sozinho
-(`.github/workflows/testes.yml`). O Render só publica a nova versão se os testes passarem.
+JavaScript (montagem do painel e alertas) — usa o executor de testes que já vem no Node.js 22 ou mais novo:
+
+```bash
+node --test "tests/js/*.test.mjs"
+```
+
+A cada push no `main` (e em cada pull request), o GitHub Actions roda os dois sozinho
+(`.github/workflows/testes.yml`). O site só é publicado se todos passarem.
 
 ## Arquivos
 
 | Arquivo | O que faz |
 |---|---|
-| `api.py` | Busca cidades, clima, previsão e qualidade do ar na Open-Meteo |
-| `descricoes.py` | Traduz o código do tempo para português |
+| `api.py` | Busca cidades e o clima atual na Open-Meteo (app do terminal) |
+| `descricoes.py` | Traduz o código do tempo para português (app do terminal) |
 | `interface.py` + `main.py` | App do terminal |
-| `painel.py` | Organiza os dados da API no formato do painel web |
-| `avisos.py` | Calcula os alertas automáticos (chuva, vento, calor, frio) |
-| `web.py` | Servidor Flask: entrega a página e monta o painel a partir dos dados enviados pelo navegador (`POST /api/painel`) |
-| `templates/index.html` | Estrutura da página (cabeçalho, abas) |
-| `static/css/app.css` | Visual, temas claro/escuro e responsividade |
-| `static/js/main.js` | Junta tudo: estado da página e eventos |
-| `static/js/servico.js` | Consulta a Open-Meteo direto do navegador e envia os dados ao servidor (camada de dados do front) |
-| `static/js/componentes/` | Uma parte da tela por arquivo (card atual, por hora, 10 dias, mapa...) |
+| `web.py` | Servidor Flask que só entrega os arquivos de `site/` (usado no Render e para rodar localmente) |
+| `site/index.html` | Estrutura da página (cabeçalho, abas) |
+| `site/css/app.css` | Visual, temas claro/escuro e responsividade |
+| `site/js/main.js` | Junta tudo: estado da página e eventos |
+| `site/js/servico.js` | Consulta a Open-Meteo direto do navegador (camada de dados) |
+| `site/js/painel.js` | Organiza os dados da API no formato do painel |
+| `site/js/avisos.js` | Calcula os alertas automáticos (chuva, vento, calor, frio) |
+| `site/js/descricoes.js` | Traduz o código do tempo para português |
+| `site/js/componentes/` | Uma parte da tela por arquivo (card atual, por hora, 10 dias, mapa...) |
+| `tests/` | Testes em Python (`pytest`) e em JavaScript (`tests/js/`, `node --test`) |
 
 ## Licença
 
