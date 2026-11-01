@@ -90,6 +90,13 @@ A cada `git push` no `main`, o GitHub Actions roda os testes e, se passarem, pub
 GitHub Pages, em https://gabrielfaria7.github.io/weather/ (`.github/workflows/testes.yml`).
 Para ativar num repositório novo: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 
+## Segurança
+
+O painel carrega Chart.js e Leaflet de CDNs públicas. Para evitar que um arquivo adulterado na CDN rode no site,
+cada um tem verificação de integridade (SRI): o navegador só executa o arquivo se ele for idêntico ao esperado.
+A página também tem uma política de segurança de conteúdo (CSP) que só libera os sites que o painel realmente
+usa (Open-Meteo, NASA GIBS, EUMETSAT, OpenStreetMap e as CDNs). Um teste automático confere essas proteções.
+
 ## Testes
 
 Python (app do terminal) — as ferramentas de teste ficam em `requirements-dev.txt`:
@@ -99,7 +106,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-JavaScript (painel, alertas, consultas às APIs, satélites, vento, formatação e preferências) — usa o executor de testes que já vem no Node.js 22 ou mais novo:
+JavaScript (painel, alertas, consultas às APIs, satélites, vento, formatação, preferências e segurança da página) — usa o executor de testes que já vem no Node.js 22 ou mais novo:
 
 ```bash
 node --test "tests/js/*.test.mjs"

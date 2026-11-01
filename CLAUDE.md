@@ -62,6 +62,15 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   transparência (limites por satélite em `brilho`), para sobrar só as nuvens. Pixels de tom quente (luzes das cidades à noite no GeoColor, deserto de dia)
   são descartados. No MTG não usar `rgb_geocolour`: à noite as luzes das cidades grandes ficam brancas e parecem
   nuvens. Acima de 65° de latitude mostra aviso de sem cobertura.
+- **Segurança (`site/index.html`):** os scripts e o CSS de CDN têm `integrity` (SRI, sha384) + `crossorigin`, com
+  versão exata na URL; a `<meta http-equiv="Content-Security-Policy">` só libera os domínios usados (scripts:
+  cdnjs e unpkg; conexões: Open-Meteo, NASA GIBS e EUMETSAT; imagens: tiles do OpenStreetMap, GIBS e EUMETSAT).
+  O único script inline (o do tema, no `<head>`) é liberado pelo hash sha256 dele. `tests/js/seguranca.test.mjs`
+  confere tudo isso: ao editar o script do tema, o teste falha e mostra o hash novo para pôr na CSP; ao trocar a
+  versão de uma biblioteca, recalcular o `integrity` (`curl -sL URL | openssl dgst -sha384 -binary | openssl base64 -A`)
+  e conferir com o hash oficial; ao usar um domínio novo, incluí-lo na diretiva certa da CSP. Estilos inline
+  (`style="..."`) são usados pelo código, por isso `style-src` tem `'unsafe-inline'`. O GitHub Pages não permite
+  cabeçalhos HTTP próprios, então a CSP fica na meta tag (sem `frame-ancestors`, que só vale por cabeçalho).
 - `.container` usa `padding-inline` (não `padding`), senão zera o espaço vertical do `<main>`.
 - A linha superior do cabeçalho tem `z-index` para as sugestões da busca abrirem por cima das abas.
 
