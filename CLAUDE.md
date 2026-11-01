@@ -9,13 +9,12 @@ Repositório: https://github.com/GabrielFaria7/weather (branch principal `main`)
 ```bash
 python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements-dev.txt
 python main.py                                 # app do terminal
-python web.py                                  # painel web em http://127.0.0.1:5000
-python3 -m http.server -d site 8000            # o painel também roda em qualquer servidor de arquivos
+python3 -m http.server -d site 8000            # painel web em http://127.0.0.1:8000
 pytest                                         # testes Python (pytest.ini já ajusta o pythonpath)
 node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, sem dependências)
 ```
 
-- `requirements.txt` tem só o que o servidor precisa (o Render instala ele). Ferramentas de desenvolvimento
+- `requirements.txt` tem só o que o app do terminal precisa (requests). Ferramentas de desenvolvimento
   (pytest) ficam em `requirements-dev.txt`, que inclui o `requirements.txt`.
 
 ## Arquitetura
@@ -27,17 +26,17 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   em `site/js/componentes/` (um arquivo por seção da tela). Não existe mais `POST /api/painel`.
 - **Caminhos relativos:** o GitHub Pages serve o site em `/weather/`, então `site/index.html` usa caminhos relativos
   (`css/app.css`, `js/main.js`, logo com `href="./"`). Nunca usar caminhos que começam com `/`.
-- `web.py` é só um Flask que entrega `site/` (para o Render e para rodar localmente). `descricoes.py` continua em
-  Python porque o app do terminal usa; a tabela de descrições existe nas duas linguagens.
+- Não há servidor próprio: o Python é só o app do terminal. `descricoes.py` continua em Python porque o terminal
+  usa; a tabela de descrições existe nas duas linguagens.
 - **Sem build no front:** HTML/CSS/JS puros. Chart.js e Leaflet vêm de CDN em `site/index.html`.
   Node só é usado para rodar os testes (`node --test`, sem `package.json` nem dependências); não migrar para
   React/Vite sem pedido explícito.
 
 ## Decisões importantes (não desfazer)
 
-- **Nenhum servidor consulta a Open-Meteo na versão web.** No Render gratuito, o IP de saída
-  é compartilhado com outros sites e a Open-Meteo respondia `429 Daily API request limit exceeded`.
-  Por isso o navegador de cada visitante faz as consultas (a Open-Meteo libera CORS).
+- **Nenhum servidor consulta a Open-Meteo na versão web.** Quando o painel rodava no Render gratuito, o IP de
+  saída era compartilhado com outros sites e a Open-Meteo respondia `429 Daily API request limit exceeded`.
+  Por isso o navegador de cada visitante faz as consultas (a Open-Meteo libera CORS). Não voltar a ter servidor.
 - **Alertas são automáticos, não oficiais.** `site/js/avisos.js` calcula a partir da previsão e a interface
   deixa isso claro, com link para o INMET. Nunca apresentar como alerta oficial.
 - **O mapa tem só as camadas Nuvens e Vento**, ambas com dados reais. Radar de chuva, Temperatura e Precipitação
@@ -64,12 +63,10 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
 
 ## Deploy
 
-- **GitHub Pages (principal):** https://gabrielfaria7.github.io/weather/ (no topo do README). O workflow
+- **GitHub Pages:** https://gabrielfaria7.github.io/weather/ (no topo do README). O workflow
   `.github/workflows/testes.yml` roda pytest e `node --test`; se passarem, o job `publicar` envia `site/` ao Pages
   (Settings → Pages → Source: GitHub Actions).
-- **Render (cópia antiga):** https://weather-jdpm.onrender.com/, plano gratuito, `render.yaml` + `.python-version`
-  (Python 3.12.3). Start command: `gunicorn web:app --bind 0.0.0.0:$PORT --workers 2 --timeout 60`. Publica depois
-  que o GitHub Actions passa (`autoDeployTrigger: checksPass`). Dorme sem acessos (~1 min para acordar).
+- O Render (https://weather-jdpm.onrender.com/) foi desligado; `web.py` e `render.yaml` foram removidos.
 
 ## Como trabalhar neste projeto
 

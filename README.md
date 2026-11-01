@@ -6,7 +6,6 @@ Tem duas formas de usar: no terminal e num painel web completo.
 **Acesse o painel online:** https://gabrielfaria7.github.io/weather/
 
 > O painel é um site estático no GitHub Pages: abre na hora, sem servidor para "acordar".
-> A cópia antiga no Render (https://weather-jdpm.onrender.com/) continua no ar, mas pode levar cerca de 1 minuto para abrir.
 
 ## Prints
 
@@ -65,12 +64,11 @@ Terminal:
 python main.py
 ```
 
-Web:
+Web (o painel é só HTML, CSS e JavaScript, na pasta `site/`, então basta um servidor de arquivos):
 ```bash
-python web.py
+python3 -m http.server -d site 8000
 ```
-Depois, abra http://127.0.0.1:5000 no navegador. Como o painel é só HTML, CSS e JavaScript (pasta `site/`),
-qualquer servidor de arquivos também serve, por exemplo `python3 -m http.server -d site 8000`.
+Depois, abra http://127.0.0.1:8000 no navegador.
 
 O painel web tem: clima atual, previsão por hora com gráfico, 10 dias (clique em um dia para ver
 detalhes), indicadores (UV, pressão, visibilidade, sol...), qualidade do ar, alertas automáticos,
@@ -88,17 +86,13 @@ O painel web é um **site estático**: a pasta `site/` tem tudo (HTML, CSS e Jav
 visitante consulta a Open-Meteo e monta o painel sozinho, sem servidor. Assim cada pessoa usa o próprio limite
 gratuito da API e o site abre na hora.
 
-**GitHub Pages (principal):** a cada `git push` no `main`, o GitHub Actions roda os testes e, se passarem,
-publica a pasta `site/` em https://gabrielfaria7.github.io/weather/ (`.github/workflows/testes.yml`).
+A cada `git push` no `main`, o GitHub Actions roda os testes e, se passarem, publica a pasta `site/` no
+GitHub Pages, em https://gabrielfaria7.github.io/weather/ (`.github/workflows/testes.yml`).
 Para ativar num repositório novo: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-
-**Render (cópia antiga):** o `render.yaml` sobe o `web.py`, um servidor Flask que só entrega os arquivos de `site/`.
-O Render publica depois que os testes passam (`autoDeployTrigger: checksPass`). No plano gratuito ele "dorme" após
-um tempo sem acessos, e a primeira visita depois disso demora cerca de 1 minuto.
 
 ## Testes
 
-Python (app do terminal e servidor) — as ferramentas de teste ficam em `requirements-dev.txt`:
+Python (app do terminal) — as ferramentas de teste ficam em `requirements-dev.txt`:
 
 ```bash
 pip install -r requirements-dev.txt
@@ -121,7 +115,6 @@ A cada push no `main` (e em cada pull request), o GitHub Actions roda os dois so
 | `api.py` | Busca cidades e o clima atual na Open-Meteo (app do terminal) |
 | `descricoes.py` | Traduz o código do tempo para português (app do terminal) |
 | `interface.py` + `main.py` | App do terminal |
-| `web.py` | Servidor Flask que só entrega os arquivos de `site/` (usado no Render e para rodar localmente) |
 | `site/index.html` | Estrutura da página (cabeçalho, abas) |
 | `site/css/app.css` | Visual, temas claro/escuro e responsividade |
 | `site/js/main.js` | Junta tudo: estado da página e eventos |
