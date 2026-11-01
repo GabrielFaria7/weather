@@ -7,12 +7,15 @@ Repositório: https://github.com/GabrielFaria7/weather (branch principal `main`)
 ## Comandos
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements-dev.txt
 python main.py                                 # app do terminal
 python web.py                                  # painel web em http://127.0.0.1:5000
 gunicorn web:app --bind 0.0.0.0:8000           # igual ao servidor do Render
 pytest                                         # testes (pytest.ini já ajusta o pythonpath)
 ```
+
+- `requirements.txt` tem só o que o servidor precisa (o Render instala ele). Ferramentas de desenvolvimento
+  (pytest) ficam em `requirements-dev.txt`, que inclui o `requirements.txt`.
 
 ## Arquitetura
 
@@ -58,7 +61,8 @@ pytest                                         # testes (pytest.ini já ajusta o
 - Endereço público: https://weather-jdpm.onrender.com/ (está no topo do README).
 - Render, plano gratuito, configurado por `render.yaml` e `.python-version` (Python 3.12.3).
 - Start command: `gunicorn web:app --bind 0.0.0.0:$PORT --workers 2 --timeout 60`.
-- Deploy automático a cada push no branch `main`.
+- Deploy automático a cada push no branch `main`, só depois que o GitHub Actions passa
+  (`.github/workflows/testes.yml` roda o pytest; `autoDeployTrigger: checksPass` no `render.yaml`).
 
 ## Como trabalhar neste projeto
 

@@ -88,7 +88,8 @@ O projeto já vem com o arquivo `render.yaml`, que diz ao [Render](https://rende
 2. Clique em **New → Blueprint** e escolha este repositório.
 3. Confirme em **Apply**. Em poucos minutos o site fica disponível em um endereço `*.onrender.com`.
 
-A cada `git push` no branch `main`, o Render publica a nova versão sozinho.
+A cada `git push` no branch `main`, o Render publica a nova versão sozinho, mas só depois que os testes
+do GitHub Actions passam (`autoDeployTrigger: checksPass` no `render.yaml`).
 No plano gratuito, o site "dorme" após um tempo sem acessos, e a primeira visita depois disso demora um pouco mais.
 
 Na versão web, quem consulta a Open-Meteo é o **navegador de cada visitante**, e não o servidor.
@@ -102,9 +103,15 @@ gunicorn web:app --bind 0.0.0.0:8000
 
 ## Testes
 
+Os testes usam ferramentas que não vão para o servidor, então ficam em `requirements-dev.txt`:
+
 ```bash
+pip install -r requirements-dev.txt
 pytest
 ```
+
+A cada push no `main` (e em cada pull request), o GitHub Actions roda os testes sozinho
+(`.github/workflows/testes.yml`). O Render só publica a nova versão se os testes passarem.
 
 ## Arquivos
 
