@@ -1,6 +1,6 @@
 import { buscarPrevisao } from "./servico.js";
-import { agoraNaCidade } from "./formato.js";
-import { preencherIcones } from "./icones.js";
+import { agoraNaCidade, dataHoraLocal, esc } from "./formato.js";
+import { iconeUI, preencherIcones } from "./icones.js";
 import { favoritos, preferencias } from "./preferencias.js";
 import { iniciarBusca } from "./componentes/busca.js";
 import { renderizarAtual } from "./componentes/atual.js";
@@ -61,8 +61,19 @@ function localDoEndereco() {
   return { nome: p.get("nome") || "Local escolhido", estado: p.get("estado") || "", pais: p.get("pais") || "", latitude, longitude };
 }
 
+function avisoPrevisaoSalva() {
+  if (!estado.dados.salvaEm) return "";
+  return `
+    <div class="aviso-salvo" role="status">
+      ${iconeUI("semSinal")}
+      <p><strong>Sem conexão com o serviço de meteorologia.</strong> Mostrando a previsão salva em
+        ${esc(dataHoraLocal(estado.dados.salvaEm))}; ela pode estar desatualizada.</p>
+      <button class="btn-texto" type="button" data-recarregar>${iconeUI("recarregar")}Tentar de novo</button>
+    </div>`;
+}
+
 function montarPainel() {
-  principal.innerHTML = `
+  principal.innerHTML = `${avisoPrevisaoSalva()}
     <div class="painel">
       <div class="area-atual" data-area="atual"></div>
       <div class="area-lateral">
@@ -76,6 +87,7 @@ function montarPainel() {
       <div class="area-mapa" data-area="mapa"></div>
     </div>`;
   renderizarConteudo();
+  principal.querySelector("[data-recarregar]")?.addEventListener("click", () => carregar(estado.local));
   renderizarMapa(area("mapa"), estado.dados, contexto());
   ativarAba(document.querySelector('.aba[href="#hoje"]'));
   observarAbas();
@@ -264,9 +276,38 @@ function iniciar() {
 
   window.addEventListener("resize", ajustarMapa);
 
+  window.addEventListener("online", () => {
+    if (estado.dados?.salvaEm) carregar(estado.local);
+  });
+  iniciarAplicativo();
+
   const inicial = localDoEndereco() ?? preferencias.ultimoLocal;
   if (inicial) carregar(inicial);
   else mostrarInicio();
+}
+
+function iniciarAplicativo() {
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+  const botao = document.getElementById("btn-instalar");
+  let pedidoDeInstalacao = null;
+  window.addEventListener("beforeinstallprompt", (evento) => {
+    evento.preventDefault();
+    pedidoDeInstalacao = evento;
+    botao.hidden = false;
+  });
+  botao.addEventListener("click", async () => {
+    if (!pedidoDeInstalacao) return;
+    pedidoDeInstalacao.prompt();
+    await pedidoDeInstalacao.userChoice;
+    pedidoDeInstalacao = null;
+    botao.hidden = true;
+  });
+  window.addEventListener("appinstalled", () => {
+    botao.hidden = true;
+    mostrarAviso("Weather instalado como aplicativo.");
+  });
 }
 
 iniciar();

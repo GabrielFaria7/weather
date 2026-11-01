@@ -76,6 +76,18 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   link usa as tags Open Graph do `<head>` e `site/og-image.png` (1200 × 630), gerada no Chrome headless a partir de
   `ferramentas/og-image.html` (abrir em 1200 × 630 e tirar o print da página). `og:image` e `og:url` precisam ser
   endereços completos. `tests/js/metadados.test.mjs` confere arquivos, tamanhos e tags.
+- **Aplicativo (PWA):** `site/manifest.webmanifest` (caminhos relativos; ícones `icone-192.png`, `icone-512.png` e
+  `icone-mascaravel-512.png`, este com o desenho dentro da área segura do Android) e `site/sw.js`, registrado em
+  `main.js` (`iniciarAplicativo`, que também mostra "Instalar como aplicativo" nas configurações quando o navegador
+  oferece). O service worker guarda na instalação `ARQUIVOS_DO_SITE` e as `BIBLIOTECAS` de CDN; arquivos do site vêm
+  da rede primeiro (cache só se a rede falhar ou demorar 5 s), bibliotecas de CDN vêm do cache primeiro; APIs,
+  satélites e tiles do mapa passam direto (não são guardados). **Ao criar ou remover arquivo em `site/`, ou trocar a
+  versão de uma biblioteca de CDN, atualizar as listas do `sw.js`** (`tests/js/aplicativo.test.mjs` falha se faltar).
+  `VERSAO` só precisa mudar se a forma de guardar mudar.
+- **Previsão offline:** `buscarPrevisao` (`servico.js`) guarda cada previsão que deu certo em `previsoesSalvas`
+  (`preferencias.js`, localStorage, até 5 cidades). Se a consulta falhar (sem internet, limite 429 etc.) e houver
+  previsão salva da cidade com menos de 7 dias, devolve o painel com `salvaEm`; `main.js` mostra o aviso
+  `.aviso-salvo` com a data e "Tentar de novo", e recarrega sozinho no evento `online`.
 - `.container` usa `padding-inline` (não `padding`), senão zera o espaço vertical do `<main>`.
 - A linha superior do cabeçalho tem `z-index` para as sugestões da busca abrirem por cima das abas.
 

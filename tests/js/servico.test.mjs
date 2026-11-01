@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { afterEach, test } from "node:test";
+import { afterEach, beforeEach, test } from "node:test";
 import {
   buscarCidades, buscarHorariosSatelite, buscarPrevisao, buscarVentoGrade, ultimosHorarios, urlTileSatelite,
 } from "../../site/js/servico.js";
@@ -23,6 +23,17 @@ function simularFetch(responder) {
     };
   };
 }
+
+let guardado;
+
+beforeEach(() => {
+  guardado = new Map();
+  Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    writable: true,
+    value: { getItem: (chave) => guardado.get(chave) ?? null, setItem: (chave, valor) => guardado.set(chave, String(valor)) },
+  });
+});
 
 afterEach(() => {
   globalThis.fetch = fetchOriginal;
@@ -186,4 +197,67 @@ test("falha na qualidade do ar não impede a previsão", async () => {
   const painel = await buscarPrevisao({ nome: "Manaus", latitude: -3.1, longitude: -60 });
   assert.equal(painel.qualidade_ar, null);
   assert.equal(painel.atual.descricao, "Chuva leve");
+});
+
+const MANAUS = { nome: "Manaus", estado: "Amazonas", pais: "Brasil", latitude: -3.1, longitude: -60 };
+const respostaCompleta = (url) => (url.hostname.startsWith("air-quality")
+  ? { corpo: { current: { european_aqi: 25 } } }
+  : { corpo: previsaoFalsa() });
+
+test("previsão que deu certo fica salva no navegador", async () => {
+  simularFetch(respostaCompleta);
+  const painel = await buscarPrevisao(MANAUS);
+  assert.equal(painel.salvaEm, undefined);
+  const salvas = JSON.parse(guardado.get("weather.previsoes"));
+  assert.equal(salvas.length, 1);
+  assert.deepEqual(salvas[0].local, { latitude: -3.1, longitude: -60 });
+  assert.equal(salvas[0].ar.european_aqi, 25);
+});
+
+test("sem internet usa a previsão salva e avisa quando ela é", async () => {
+  simularFetch(respostaCompleta);
+  await buscarPrevisao(MANAUS);
+  simularFetch(() => ({ falhar: new TypeError("sem rede") }));
+  const painel = await buscarPrevisao({ ...MANAUS, latitude: -3.1001 });
+  assert.ok(Date.now() - painel.salvaEm < 5000);
+  assert.match(painel.motivo, /Verifique sua internet/);
+  assert.equal(painel.local.nome, "Manaus");
+  assert.equal(painel.atual.descricao, "Chuva leve");
+  assert.equal(painel.qualidade_ar.indice, 25);
+});
+
+test("limite de consultas também usa a previsão salva", async () => {
+  simularFetch(respostaCompleta);
+  await buscarPrevisao(MANAUS);
+  simularFetch(() => ({ status: 429, corpo: { reason: "limite" } }));
+  assert.ok((await buscarPrevisao(MANAUS)).salvaEm);
+});
+
+test("sem previsão salva daquela cidade mostra o erro", async () => {
+  simularFetch(respostaCompleta);
+  await buscarPrevisao(MANAUS);
+  simularFetch(() => ({ falhar: new TypeError("sem rede") }));
+  await assert.rejects(buscarPrevisao({ nome: "Recife", latitude: -8.05, longitude: -34.9 }), /Verifique sua internet/);
+});
+
+test("previsão salva há mais de 7 dias não é usada", async () => {
+  const antiga = Date.now() - 8 * 24 * 60 * 60 * 1000;
+  guardado.set("weather.previsoes", JSON.stringify([{ local: { latitude: -3.1, longitude: -60 }, previsao: previsaoFalsa(), ar: null, quando: antiga }]));
+  simularFetch(() => ({ falhar: new TypeError("sem rede") }));
+  await assert.rejects(buscarPrevisao(MANAUS), /Verifique sua internet/);
+});
+
+test("pedido cancelado não usa a previsão salva", async () => {
+  simularFetch(respostaCompleta);
+  await buscarPrevisao(MANAUS);
+  const controle = new AbortController();
+  controle.abort();
+  simularFetch(() => ({ falhar: Object.assign(new Error("cancelado"), { name: "AbortError" }) }));
+  await assert.rejects(buscarPrevisao(MANAUS, { signal: controle.signal }), { name: "AbortError" });
+});
+
+test("dados quebrados da API não são salvos", async () => {
+  simularFetch((url) => (url.hostname.startsWith("air-quality") ? { corpo: {} } : { corpo: { current: {} } }));
+  await assert.rejects(buscarPrevisao(MANAUS), /incompletos/);
+  assert.equal(guardado.get("weather.previsoes"), undefined);
 });

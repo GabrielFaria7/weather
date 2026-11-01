@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { beforeEach, test } from "node:test";
-import { favoritos, mesmoLocal, preferencias } from "../../site/js/preferencias.js";
+import { favoritos, mesmoLocal, preferencias, previsoesSalvas } from "../../site/js/preferencias.js";
 
 let guardado;
 
@@ -79,4 +79,14 @@ test("limpar favoritos", () => {
   favoritos.alternar(RIO);
   favoritos.limpar();
   assert.deepEqual(favoritos.listar(), []);
+});
+
+test("previsões salvas: uma por cidade, no máximo 5, a mais nova primeiro", () => {
+  for (let i = 0; i < 7; i++) previsoesSalvas.guardar({ latitude: i, longitude: i }, { n: i }, null, 1000 + i);
+  const lista = JSON.parse(guardado.get("weather.previsoes"));
+  assert.deepEqual(lista.map((p) => p.previsao.n), [6, 5, 4, 3, 2]);
+  previsoesSalvas.guardar({ latitude: 4.001, longitude: 4 }, { n: 40 }, null, 2000);
+  assert.deepEqual(JSON.parse(guardado.get("weather.previsoes")).map((p) => p.previsao.n), [40, 6, 5, 3, 2]);
+  assert.equal(previsoesSalvas.buscar({ latitude: 4, longitude: 4.002 }).previsao.n, 40);
+  assert.equal(previsoesSalvas.buscar({ latitude: 50, longitude: 50 }), null);
 });

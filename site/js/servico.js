@@ -1,4 +1,5 @@
 import { montarPainel } from "./painel.js";
+import { previsoesSalvas } from "./preferencias.js";
 
 const URL_GEOCODIFICACAO = "https://geocoding-api.open-meteo.com/v1/search";
 const URL_PREVISAO = "https://api.open-meteo.com/v1/forecast";
@@ -12,6 +13,7 @@ const MATRIZ_SATELITE = "GoogleMapsCompatible_Level7";
 const URL_EUMETSAT = "https://view.eumetsat.int/geoserver";
 const LIMITE_MERCATOR = 20037508.342789244;
 const JANELA_SATELITE_MS = 4 * 60 * 60 * 1000;
+const VALIDADE_PREVISAO_SALVA_MS = 7 * 24 * 60 * 60 * 1000;
 
 const PARAMETROS_PREVISAO = {
   timezone: "auto",
@@ -159,14 +161,30 @@ export function urlTileSatelite({ fonte, camada }, horario) {
   };
 }
 
+function previsaoSalvaRecente(posicao) {
+  const salva = previsoesSalvas.buscar(posicao);
+  return salva && Date.now() - salva.quando < VALIDADE_PREVISAO_SALVA_MS ? salva : null;
+}
+
 export async function buscarPrevisao(local, opcoes) {
   const posicao = { latitude: local.latitude, longitude: local.longitude };
-  const [previsao, ar] = await Promise.all([
-    pedirOpenMeteo(URL_PREVISAO, { ...posicao, ...PARAMETROS_PREVISAO }, opcoes),
-    pedirOpenMeteo(URL_QUALIDADE_AR, { ...posicao, current: "european_aqi,pm2_5,pm10,ozone,nitrogen_dioxide" }, opcoes)
-      .then((dados) => dados.current ?? null)
-      .catch(() => null),
-  ]);
+  const dadosDoLocal = { nome: local.nome, estado: local.estado, pais: local.pais, ...posicao };
+  let previsao;
+  let ar;
+  try {
+    [previsao, ar] = await Promise.all([
+      pedirOpenMeteo(URL_PREVISAO, { ...posicao, ...PARAMETROS_PREVISAO }, opcoes),
+      pedirOpenMeteo(URL_QUALIDADE_AR, { ...posicao, current: "european_aqi,pm2_5,pm10,ozone,nitrogen_dioxide" }, opcoes)
+        .then((dados) => dados.current ?? null)
+        .catch(() => null),
+    ]);
+  } catch (erro) {
+    const salva = erro.name === "AbortError" ? null : previsaoSalvaRecente(posicao);
+    if (!salva) throw erro;
+    return { ...montarPainel(dadosDoLocal, salva.previsao, salva.ar), salvaEm: salva.quando, motivo: erro.message };
+  }
 
-  return montarPainel({ nome: local.nome, estado: local.estado, pais: local.pais, ...posicao }, previsao, ar);
+  const painel = montarPainel(dadosDoLocal, previsao, ar);
+  previsoesSalvas.guardar(posicao, previsao, ar);
+  return painel;
 }

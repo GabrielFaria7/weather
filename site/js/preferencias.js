@@ -49,3 +49,14 @@ export const favoritos = {
   remover(local) { salvar("favoritos", this.listar().filter((f) => !mesmoLocal(f, local))); },
   limpar() { salvar("favoritos", []); },
 };
+
+const PREVISOES_GUARDADAS = 5;
+
+export const previsoesSalvas = {
+  buscar(local) { return ler("previsoes", []).find((p) => mesmoLocal(p.local, local)) ?? null; },
+  guardar(local, previsao, ar, quando = Date.now()) {
+    const posicao = { latitude: local.latitude, longitude: local.longitude };
+    const outras = ler("previsoes", []).filter((p) => !mesmoLocal(p.local, local));
+    salvar("previsoes", [{ local: posicao, previsao, ar, quando }, ...outras].slice(0, PREVISOES_GUARDADAS));
+  },
+};

@@ -74,6 +74,10 @@ O painel web tem: clima atual, previsão por hora com gráfico, 10 dias (clique 
 detalhes), indicadores (UV, pressão, visibilidade, sol...), qualidade do ar, alertas automáticos,
 mapa com vento e nuvens animados, cidades favoritas, °C/°F, modo claro/escuro e localização atual.
 
+> **Instale como aplicativo:** no Chrome/Edge, use o ícone de instalar na barra de endereço (ou
+> **Configurações → Instalar como aplicativo** no painel); no iPhone, **Compartilhar → Adicionar à Tela de Início**.
+> Sem internet, o app abre normalmente e mostra a última previsão salva de cada cidade (com aviso de quando ela é).
+
 > Os **alertas** são calculados a partir da previsão e **não são oficiais**.
 > No **mapa**, a camada **Vento** mostra a previsão da Open-Meteo animada (não é medição em tempo real) e a
 > camada **Nuvens** mostra imagens reais de satélite do mundo todo (menos perto dos polos): GOES (NOAA, via NASA GIBS)
@@ -115,7 +119,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-JavaScript (painel, alertas, consultas às APIs, satélites, vento, formatação, preferências e segurança da página) — usa o executor de testes que já vem no Node.js 22 ou mais novo:
+JavaScript (painel, alertas, consultas às APIs, previsão offline, satélites, vento, formatação, preferências, aplicativo e segurança da página) — usa o executor de testes que já vem no Node.js 22 ou mais novo:
 
 ```bash
 node --test "tests/js/*.test.mjs"
@@ -142,7 +146,9 @@ A cada push no `main` (e em cada pull request), o GitHub Actions roda os dois so
 | `site/js/gradeVento.js` | Converte a grade de vento para o formato da animação e acha o ponto sob o mouse |
 | `site/js/formato.js` / `preferencias.js` | Formatação (temperatura, vento, horas) e preferências/favoritos salvos no navegador |
 | `site/js/componentes/` | Uma parte da tela por arquivo (card atual, por hora, 10 dias, mapa...) |
-| `site/favicon.svg`, `*.png` | Ícone do site e imagem de prévia ao compartilhar o link (Open Graph) |
+| `site/favicon.svg`, `*.png` | Ícones do site e do aplicativo e imagem de prévia ao compartilhar o link (Open Graph) |
+| `site/manifest.webmanifest` | Dados do aplicativo instalável (nome, cores, ícones) |
+| `site/sw.js` | Service worker: guarda os arquivos do site para ele abrir sem internet |
 | `ferramentas/og-image.html` | Modelo da imagem de prévia (abrir em 1200 × 630 e tirar o print) |
 | `tests/` | Testes em Python (`pytest`) e em JavaScript (`tests/js/`, `node --test`) |
 

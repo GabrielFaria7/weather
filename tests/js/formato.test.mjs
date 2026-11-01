@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  converterTemperatura, dataCurta, diaSemana, direcao, duracao, esc, hora, horaNaCidade, minutosDoDia,
+  converterTemperatura, dataCurta, dataHoraLocal, diaSemana, direcao, duracao, esc, hora, horaNaCidade, minutosDoDia,
   nomeCompleto, porcentagem, temperatura, vento,
 } from "../../site/js/formato.js";
 
@@ -70,4 +70,15 @@ test("duração", () => {
 test("nome completo do local", () => {
   assert.equal(nomeCompleto({ estado: "Rio de Janeiro", pais: "Brasil" }), "Rio de Janeiro, Brasil");
   assert.equal(nomeCompleto({ estado: "", pais: "Japão" }), "Japão");
+});
+
+test("data e hora da previsão salva no fuso do aparelho", () => {
+  const fusoOriginal = process.env.TZ;
+  process.env.TZ = "America/Sao_Paulo";
+  try {
+    assert.equal(dataHoraLocal(Date.parse("2026-11-01T15:05:00Z")), "01/11 às 12:05");
+  } finally {
+    if (fusoOriginal === undefined) delete process.env.TZ;
+    else process.env.TZ = fusoOriginal;
+  }
 });

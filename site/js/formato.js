@@ -106,6 +106,13 @@ export function horaNaCidade(data, fuso, formato = "24") {
   }
 }
 
+export function dataHoraLocal(instante) {
+  const data = new Date(instante);
+  const dia = data.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  const horario = data.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return `${dia} às ${horario}`;
+}
+
 export function duracao(minutos) {
   const h = Math.floor(minutos / 60);
   const m = Math.round(minutos % 60);

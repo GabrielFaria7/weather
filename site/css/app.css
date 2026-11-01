@@ -115,6 +115,21 @@ small { font-size: .8em; }
   font-weight: 600; color: var(--primaria);
 }
 .btn-texto.perigo { color: var(--perigo); }
+.btn-texto[hidden] { display: none; }
+
+.aviso-salvo {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding: 12px 16px;
+  border-radius: var(--raio-p); background: var(--atencao-fundo); color: var(--texto);
+  border: 1px solid color-mix(in srgb, var(--atencao) 40%, transparent);
+}
+.aviso-salvo > .ui-icone { width: 22px; height: 22px; color: var(--atencao); }
+.aviso-salvo p { flex: 1; margin: 0; font-size: 14px; }
+.aviso-salvo .btn-texto { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+@media (max-width: 640px) {
+  .aviso-salvo { flex-wrap: wrap; align-items: flex-start; }
+  .aviso-salvo p { flex-basis: calc(100% - 34px); }
+  .aviso-salvo .btn-texto { margin-left: 34px; padding: 0; }
+}
 
 .segmentado {
   display: inline-flex; padding: 3px; gap: 2px;
