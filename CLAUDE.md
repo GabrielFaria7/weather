@@ -79,6 +79,10 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
 - **GitHub Pages:** https://gabrielfaria7.github.io/weather/ (no topo do README). O workflow
   `.github/workflows/testes.yml` roda pytest e `node --test`; se passarem, o job `publicar` envia `site/` ao Pages
   (Settings → Pages → Source: GitHub Actions).
+- **Dependabot** (`.github/dependabot.yml`): toda segunda-feira, às 9h de Brasília, abre no máximo um pull request
+  por grupo (pip e GitHub Actions) com as versões novas. O workflow de testes roda no PR; se passar, é só fazer o
+  merge. As bibliotecas de CDN em `site/index.html` (Chart.js, Leaflet, leaflet-velocity) o Dependabot não vê:
+  atualizar à mão, recalculando o `integrity` (ver Segurança). leaflet-velocity fica na 1.9.2 (a 2.x mudou de licença).
 - O Render (https://weather-jdpm.onrender.com/) foi desligado; `web.py` e `render.yaml` foram removidos.
 
 ## Como trabalhar neste projeto

@@ -97,6 +97,15 @@ cada um tem verificação de integridade (SRI): o navegador só executa o arquiv
 A página também tem uma política de segurança de conteúdo (CSP) que só libera os sites que o painel realmente
 usa (Open-Meteo, NASA GIBS, EUMETSAT, OpenStreetMap e as CDNs). Um teste automático confere essas proteções.
 
+## Atualizações
+
+O Dependabot (`.github/dependabot.yml`) confere toda segunda-feira se há versões novas das dependências Python
+(`requirements.txt` e `requirements-dev.txt`) e das ações usadas no GitHub Actions. Quando há, ele abre um pull
+request com tudo agrupado; os testes rodam sozinhos no pull request e, se passarem, basta fazer o merge.
+
+As bibliotecas carregadas por CDN no `site/index.html` (Chart.js e Leaflet) são atualizadas manualmente, porque
+cada troca de versão exige recalcular a verificação de integridade.
+
 ## Testes
 
 Python (app do terminal) — as ferramentas de teste ficam em `requirements-dev.txt`:

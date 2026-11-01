@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/Sao_Paulo
+    groups:
+      python:
+        patterns: ["*"]
+    commit-message:
+      prefix: "Atualiza dependências Python"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/Sao_Paulo
+    groups:
+      github-actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "Atualiza ações do GitHub"
+    open-pull-requests-limit: 5
