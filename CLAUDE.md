@@ -20,6 +20,8 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
 ## Arquitetura
 
 - **Terminal:** `main.py` → `api.py` (`buscar_cidade`, `buscar_clima`, via `requests`) → `interface.py`.
+  Fica como está: por decisão do dono do projeto, o app do terminal não recebe novas funções (as pessoas usam a
+  interface web). Só corrigir se quebrar.
 - **Web (site estático em `site/`):** o **navegador** consulta a Open-Meteo direto (`site/js/servico.js`:
   geocodificação, previsão de 10 dias e qualidade do ar) e monta o painel ali mesmo (`site/js/painel.js`,
   `avisos.js`, `descricoes.js`, portados do antigo `painel.py`/`avisos.py`). O front desenha tudo com módulos ES
@@ -88,6 +90,9 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   (`preferencias.js`, localStorage, até 5 cidades). Se a consulta falhar (sem internet, limite 429 etc.) e houver
   previsão salva da cidade com menos de 7 dias, devolve o painel com `salvaEm`; `main.js` mostra o aviso
   `.aviso-salvo` com a data e "Tentar de novo", e recarrega sozinho no evento `online`.
+- **Emendas no mapa:** `.mapa-leaflet .leaflet-tile { outline: 1px solid transparent; }` (`app.css`) evita um fio
+  claro entre os tiles do mapa em telas com escala fracionária (celulares com 2x/2,625x e notebooks a 150%), com ou
+  sem camada ligada. Não remover. Testado: aumentar o tile para 257 px ou trocar o fundo não resolvem.
 - `.container` usa `padding-inline` (não `padding`), senão zera o espaço vertical do `<main>`.
 - A linha superior do cabeçalho tem `z-index` para as sugestões da busca abrirem por cima das abas.
 

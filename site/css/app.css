@@ -413,6 +413,7 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 .camadas { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
 .mapa-area { position: relative; flex: 1; min-height: 320px; border-radius: var(--raio-p); overflow: hidden; border: 1px solid var(--borda); }
 .mapa-leaflet { position: absolute; inset: 0; z-index: 0; background: var(--superficie-2); }
+.mapa-leaflet .leaflet-tile { outline: 1px solid transparent; }
 :root[data-theme="dark"] .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.85) contrast(.9); }
 .mapa-leaflet.com-camada .leaflet-tile-pane { filter: grayscale(1) brightness(.5) contrast(1.15); }
 :root[data-theme="dark"] .mapa-leaflet.com-camada .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) grayscale(1) brightness(.6) contrast(.95); }
