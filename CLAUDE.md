@@ -12,6 +12,8 @@ python main.py                                 # app do terminal
 python3 -m http.server -d site 8000            # painel web em http://127.0.0.1:8000
 pytest                                         # testes Python (pytest.ini já ajusta o pythonpath)
 node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, sem dependências)
+npm install --no-save --no-package-lock playwright@1.63.0 axe-core@4.14.0 && npx playwright install chromium
+node --test "tests/navegador/*.test.mjs"       # testes no Chrome (Playwright + axe; ver "Teste no navegador")
 ```
 
 - `requirements.txt` tem só o que o app do terminal precisa (requests). Ferramentas de desenvolvimento
@@ -226,6 +228,21 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   ter `<dt>`/`<dd>` (o detalhe vai num segundo `<dd class="astro-detalhe">`). Para auditar: axe-core via Playwright com
   `bypassCSP` (a CSP do site bloqueia o script injetado), em claro, escuro, celular, janela do dia, configurações,
   mapa e "Consultando…".
+- **Teste no navegador (`tests/navegador/`, job `navegador` do workflow):** Playwright + axe-core, instalados só pelo
+  workflow (`npm install --no-save --no-package-lock`, versões fixas em `VERSAO_PLAYWRIGHT`/`VERSAO_AXE` no
+  `testes.yml`, que o Dependabot não vê: atualizar à mão) — o projeto continua sem `package.json`. `servidor.mjs` serve
+  `site/` em `/weather/` (como o Pages). `simulacao.mjs` responde **todas** as APIs e imagens externas com dados de teste
+  (previsão gerada a partir da hora atual, cópias reais de qualidade do ar e INMET em `tests/js/dados/`, grade, mar,
+  busca, horários de satélite e PNGs de 1 pixel): o GitHub Actions divide IPs e a Open-Meteo bloquearia por cota, o
+  INMET barra quem está fora do Brasil e os satélites oscilam. Só as bibliotecas de CDN carregam de verdade (confere o
+  SRI). Os contextos usam `serviceWorkers: "block"` (senão o service worker escapa da simulação) e
+  `reducedMotion: "reduce"` (senão o axe mede cores no meio das animações e dá falso erro de contraste). O axe entra por
+  `addInitScript`, que não passa pela CSP. Cada teste falha com qualquer erro de JavaScript, erro no console (inclui
+  bloqueio da CSP), pedido que falhe ou problema do axe (WCAG 2.1 A/AA + boas práticas). Cobre: painel completo em
+  claro, escuro e celular (gráfico e abas, janela do dia, Lua, Mar, sem rolagem lateral), mapa (Temperatura com rótulos,
+  Vento, Nuvens), busca + °F + modo escuro, "Consultando…" com INMET e qualidade do ar lentos e a tela inicial. Leva
+  ~20 s. Foi o teste que achou o `<header>` dentro da janela do dia (vira um segundo "banner" para leitores de tela; agora
+  é `<div class="modal-cabecalho">`).
 - **Previsão offline:** `buscarPrevisao` (`servico.js`) guarda cada previsão que deu certo em `previsoesSalvas`
   (`preferencias.js`, localStorage, até 5 cidades). Se a consulta falhar (sem internet, limite 429 etc.) e houver
   previsão salva da cidade com menos de 7 dias, devolve o painel com `salvaEm`; `main.js` mostra o aviso
@@ -249,7 +266,7 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
 ## Deploy
 
 - **GitHub Pages:** https://gabrielfaria7.github.io/weather/ (no topo do README). O workflow
-  `.github/workflows/testes.yml` roda pytest e `node --test`; se passarem, o job `publicar` envia `site/` ao Pages
+  `.github/workflows/testes.yml` roda pytest, `node --test` e o teste no navegador; se os três passarem, o job `publicar` envia `site/` ao Pages
   (Settings → Pages → Source: GitHub Actions).
 - **Dependabot** (`.github/dependabot.yml`): toda segunda-feira, às 9h de Brasília, abre no máximo um pull request
   por grupo (pip e GitHub Actions) com as versões novas. O workflow de testes roda no PR; se passar, é só fazer o

@@ -31,9 +31,24 @@ jobs:
           package-manager-cache: false
       - run: node --test "tests/js/*.test.mjs"
 
+  navegador:
+    runs-on: ubuntu-latest
+    env:
+      VERSAO_PLAYWRIGHT: 1.63.0
+      VERSAO_AXE: 4.14.0
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: npm install --no-save --no-package-lock --no-audit --no-fund "playwright@$VERSAO_PLAYWRIGHT" "axe-core@$VERSAO_AXE"
+      - run: npx playwright install --with-deps --only-shell chromium
+      - run: node --test "tests/navegador/*.test.mjs"
+
   publicar:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [pytest, javascript]
+    needs: [pytest, javascript, navegador]
     runs-on: ubuntu-latest
     permissions:
       pages: write

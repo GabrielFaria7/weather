@@ -147,7 +147,24 @@ JavaScript (painel, alertas, resumo do dia, lua, mar, compartilhar, atualizaçã
 node --test "tests/js/*.test.mjs"
 ```
 
-A cada push no `main` (e em cada pull request), o GitHub Actions roda os dois sozinho
+No navegador (Chrome de verdade, com as APIs respondendo dados de teste): abre o painel nos modos claro, escuro e
+celular, liga as camadas do mapa, usa a busca, confere a política de segurança (CSP) e a acessibilidade (axe). O
+GitHub roda este teste antes de cada publicação. Para rodar no seu computador, instale as ferramentas sem criar
+`package.json`:
+
+```bash
+npm install --no-save --no-package-lock playwright@1.63.0 axe-core@4.14.0
+```
+
+```bash
+npx playwright install chromium
+```
+
+```bash
+node --test "tests/navegador/*.test.mjs"
+```
+
+A cada push no `main` (e em cada pull request), o GitHub Actions roda os três sozinho
 (`.github/workflows/testes.yml`). O site só é publicado se todos passarem.
 
 ## Arquivos
@@ -185,7 +202,7 @@ A cada push no `main` (e em cada pull request), o GitHub Actions roda os dois so
 | `site/sw.js` | Service worker: guarda os arquivos do site para ele abrir sem internet |
 | `ferramentas/og-image.html` | Modelo da imagem de prévia (abrir em 1200 × 630 e tirar o print) |
 | `ferramentas/gerar_cidades.py` | Converte a lista de cidades do GeoNames nos blocos de `site/dados/cidades/` |
-| `tests/` | Testes em Python (`pytest`) e em JavaScript (`tests/js/`, `node --test`) |
+| `tests/` | Testes em Python (`pytest`), em JavaScript (`tests/js/`, `node --test`) e no navegador (`tests/navegador/`, Playwright) |
 
 ## Licença
 

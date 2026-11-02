@@ -60,13 +60,13 @@ function abrirDetalhe(dia, indice, ctx) {
 
   modal.innerHTML = `
     <div class="modal-corpo">
-      <header class="modal-cabecalho">
+      <div class="modal-cabecalho">
         <div>
           <p class="modal-sobre">${indice === 0 ? "Hoje" : diaSemana(dia.data, "long")}</p>
           <h2 id="modal-titulo">${dataLonga(dia.data)}</h2>
         </div>
         <button class="btn-icone" type="button" data-fechar aria-label="Fechar">${iconeUI("fechar")}</button>
-      </header>
+      </div>
       <div class="modal-resumo">
         ${iconeClima(dia.codigo, true, { tamanho: 72, animado: true })}
         <div>
