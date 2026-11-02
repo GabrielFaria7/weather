@@ -38,7 +38,7 @@ export function renderizarMar(el, dados, ctx) {
         </div>
         <dl class="astro-metricas">
           ${itens.map(([titulo, valor, detalhe]) => `
-            <div><dt>${titulo}</dt><dd>${valor}</dd>${detalhe ? `<small>${esc(detalhe)}</small>` : ""}</div>`).join("")}
+            <div><dt>${titulo}</dt><dd>${valor}</dd>${detalhe ? `<dd class="astro-detalhe">${esc(detalhe)}</dd>` : ""}</div>`).join("")}
         </dl>
       </div>
       <p class="card-fonte">Estimativa do modelo de ondas da Open-Meteo para o mar mais próximo da cidade, não medição

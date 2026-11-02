@@ -57,7 +57,7 @@ export function renderizarLua(el, dados, ctx) {
         </div>
         <dl class="astro-metricas">
           ${itens.map(([titulo, valor, detalhe]) => `
-            <div><dt>${titulo}</dt><dd>${esc(valor)}</dd>${detalhe ? `<small>${esc(detalhe)}</small>` : ""}</div>`).join("")}
+            <div><dt>${titulo}</dt><dd>${esc(valor)}</dd>${detalhe ? `<dd class="astro-detalhe">${esc(detalhe)}</dd>` : ""}</div>`).join("")}
         </dl>
       </div>
       <p class="card-fonte">Calculado no navegador para a posição da cidade, em horário local.</p>

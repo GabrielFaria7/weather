@@ -3,7 +3,7 @@ import {
   temperatura, vento,
 } from "../formato.js";
 import { iconeClima, iconeUI } from "../icones.js";
-import { coresDoTema, graficoDisponivel, reduzirMovimento } from "../graficos.js";
+import { carregarGraficos, coresDoTema, reduzirMovimento } from "../graficos.js";
 
 let graficoModal = null;
 
@@ -74,7 +74,7 @@ function abrirDetalhe(dia, indice, ctx) {
           <p class="modal-temps"><strong>${temperatura(dia.max, ctx.unidade)}</strong> <span>/ ${temperatura(dia.min, ctx.unidade)}</span></p>
         </div>
       </div>
-      ${dia.horas.length && graficoDisponivel()
+      ${dia.horas.length
         ? `<div class="modal-grafico"><canvas aria-label="Temperatura e chance de chuva ao longo do dia" role="img"></canvas></div>` : ""}
       <dl class="modal-detalhes">
         ${itens.map(([ic, rotulo, valor]) => `<div><dt>${iconeUI(ic)}${rotulo}</dt><dd>${valor}</dd></div>`).join("")}
@@ -87,7 +87,10 @@ function abrirDetalhe(dia, indice, ctx) {
   modal.showModal();
 
   const canvas = modal.querySelector("canvas");
-  if (canvas) graficoModal = graficoDoDia(canvas, dia.horas, ctx);
+  if (!canvas) return;
+  carregarGraficos().then(() => {
+    if (canvas.isConnected && modal.open && !graficoModal) graficoModal = graficoDoDia(canvas, dia.horas, ctx);
+  }).catch(() => modal.querySelector(".modal-grafico")?.remove());
 }
 
 function graficoDoDia(canvas, horas, ctx) {

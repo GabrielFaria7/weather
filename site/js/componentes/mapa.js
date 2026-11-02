@@ -1,3 +1,4 @@
+import { carregarBiblioteca } from "../bibliotecas.js";
 import { buscarCidadesDaArea, buscarGradeMapa, buscarHorariosSatelite, urlTileSatelite } from "../servico.js";
 import { direcao, duracao, esc, hora, horaNaCidade, temperatura, vento } from "../formato.js";
 import { indiceNaGrade, quadroVento } from "../gradeVento.js";
@@ -65,6 +66,10 @@ let medidor = null;
 let camadasNuvens = [];
 let nuvensCarregadas = null;
 
+let versaoMapa = 0;
+let observadorMapa = null;
+let garantirMapa = async () => null;
+
 export function renderizarMapa(el, dados, contexto) {
   const { latitude, longitude, nome } = dados.local;
   desligarCamada();
@@ -108,11 +113,38 @@ export function renderizarMapa(el, dados, contexto) {
   el.querySelector("[data-reproduzir]").addEventListener("click", alternarReproducao);
 
   const area = el.querySelector("#mapa-leaflet");
-  if (typeof window.L === "undefined") {
-    area.innerHTML = '<p class="estado-mini">Não foi possível carregar o mapa (verifique a internet).</p>';
+  const versao = ++versaoMapa;
+  let criacao = null;
+  garantirMapa = () => {
+    criacao ??= carregarBiblioteca("mapa")
+      .then(() => {
+        if (versao === versaoMapa && !mapa) criarMapa(area, latitude, longitude, nome);
+        return mapa;
+      })
+      .catch(() => {
+        criacao = null;
+        if (versao === versaoMapa) {
+          area.innerHTML = '<p class="estado-mini">Não foi possível carregar o mapa (verifique a internet).</p>';
+        }
+        return null;
+      });
+    return criacao;
+  };
+  observadorMapa?.disconnect();
+  if (!("IntersectionObserver" in window)) {
+    garantirMapa();
     return;
   }
+  observadorMapa = new IntersectionObserver((entradas) => {
+    if (!entradas.some((entrada) => entrada.isIntersecting)) return;
+    observadorMapa.disconnect();
+    garantirMapa();
+  }, { rootMargin: "400px 0px" });
+  observadorMapa.observe(area);
+}
 
+function criarMapa(area, latitude, longitude, nome) {
+  area.innerHTML = "";
   mapa = window.L.map(area, { scrollWheelZoom: false, zoomControl: true }).setView([latitude, longitude], 9);
   window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 18,
@@ -128,7 +160,7 @@ export function renderizarMapa(el, dados, contexto) {
   mapa.on("moveend", aoMoverMapa);
 }
 
-function selecionarCamada(id) {
+async function selecionarCamada(id) {
   if (!CAMADAS.some((c) => c.id === id)) return;
 
   if (id === camadaAtiva) {
@@ -140,6 +172,16 @@ function selecionarCamada(id) {
 
   desligarCamada();
   marcarChips(id);
+  if (!mapa) {
+    camadaAtiva = id;
+    escreverNota("Carregando o mapa…");
+    await garantirMapa();
+    if (camadaAtiva !== id) return;
+    if (!mapa) {
+      falhar(CAMADAS.find((c) => c.id === id).nome, "não foi possível carregar o mapa (verifique a internet).");
+      return;
+    }
+  }
   if (id === "vento") ligarVento();
   else if (id === "temperatura") ligarTemperatura();
   else ligarNuvens();
@@ -330,12 +372,14 @@ function marcarReproducao(sim) {
 async function ligarVento() {
   camadaAtiva = "vento";
   const meuMapa = mapa;
-  if (!meuMapa || typeof window.L.velocityLayer !== "function") {
-    falhar("Vento", "não foi possível carregar a animação do vento (verifique a internet).");
+  escreverNota("<strong>Vento:</strong> carregando a previsão…");
+  try {
+    await carregarBiblioteca("vento");
+  } catch {
+    if (camadaAtiva === "vento") falhar("Vento", "não foi possível carregar a animação do vento (verifique a internet).");
     return;
   }
-
-  escreverNota("<strong>Vento:</strong> carregando a previsão…");
+  if (camadaAtiva !== "vento" || !meuMapa || mapa !== meuMapa) return;
   try {
     const dados = await dadosGrade();
     if (camadaAtiva !== "vento" || mapa !== meuMapa) return;

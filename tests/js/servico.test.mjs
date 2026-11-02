@@ -215,6 +215,35 @@ test("dados do mar vêm junto e a falha deles não impede a previsão", async ()
   assert.equal(semMar.por_hora.length, 24);
 });
 
+test("previsão aparece sem esperar o INMET e a qualidade do ar quando eles demoram", async () => {
+  const devagar = (corpo, ms) => new Promise((resolver) => setTimeout(() => resolver({ corpo }), ms));
+  simularFetch((url) => {
+    if (url.hostname.endsWith("inmet.gov.br")) return devagar({ hoje: [], futuro: [] }, 700);
+    if (url.hostname.startsWith("air-quality")) return devagar({ current: { european_aqi: 25 } }, 700);
+    if (url.hostname.startsWith("marine")) return { corpo: {} };
+    return { corpo: previsaoFalsa() };
+  });
+  const inicio = Date.now();
+  const painel = await buscarPrevisao({ nome: "Manaus", estado: "Amazonas", pais: "Brasil", latitude: -3.1, longitude: -60 });
+  assert.ok(Date.now() - inicio < 650, "o painel não pode esperar os complementos lentos");
+  assert.equal(painel.pendente, true);
+  assert.equal(painel.qualidade_ar, null);
+  assert.equal(painel.alertas_oficiais, undefined);
+  assert.equal(painel.por_hora.length, 24);
+  const extras = await painel.complementos;
+  assert.deepEqual(extras.alertas_oficiais, []);
+  assert.equal(extras.qualidade_ar.nivel, "Razoável");
+  assert.equal(extras.mar, null);
+});
+
+test("complementos rápidos já vêm junto, sem segunda etapa", async () => {
+  simularFetch((url) => (url.hostname.endsWith("inmet.gov.br") ? { corpo: { hoje: [], futuro: [] } } : { corpo: previsaoFalsa() }));
+  const painel = await buscarPrevisao({ nome: "Manaus", estado: "Amazonas", pais: "Brasil", latitude: -3.1, longitude: -60 });
+  assert.equal(painel.pendente, undefined);
+  assert.equal(painel.complementos, undefined);
+  assert.deepEqual(painel.alertas_oficiais, []);
+});
+
 test("falha na qualidade do ar não impede a previsão", async () => {
   simularFetch((url) => (url.hostname.startsWith("air-quality") ? { status: 500 } : { corpo: previsaoFalsa() }));
   const painel = await buscarPrevisao({ nome: "Manaus", latitude: -3.1, longitude: -60 });

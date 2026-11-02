@@ -6,8 +6,8 @@
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self';
                  script-src 'self' https://cdnjs.cloudflare.com https://unpkg.com 'sha256-hwrgPuOfMzqEAdG5FKGmtShS3BKiDOfGF/0oEkFzbVk=';
-                 style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com;
-                 font-src https://fonts.gstatic.com;
+                 style-src 'self' 'unsafe-inline' https://unpkg.com;
+                 font-src 'self';
                  img-src 'self' data: https://*.tile.openstreetmap.org https://gibs.earthdata.nasa.gov https://view.eumetsat.int https://unpkg.com https://s3.amazonaws.com/elevation-tiles-prod/;
                  connect-src 'self' https://geocoding-api.open-meteo.com https://api.open-meteo.com https://air-quality-api.open-meteo.com https://marine-api.open-meteo.com https://apiprevmet3.inmet.gov.br https://gibs.earthdata.nasa.gov https://view.eumetsat.int;
                  object-src 'none';
@@ -48,11 +48,7 @@
     })();
   </script>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous">
+  <link rel="preload" href="fontes/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
@@ -151,12 +147,6 @@
   <dialog id="modal-dia" class="modal" aria-labelledby="modal-titulo"></dialog>
   <div id="aviso-flutuante" class="toast" role="status" hidden></div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.6.1/chart.umd.min.js"
-          integrity="sha384-Emf5ZVIUiarAdhkgtqK+5/Z5qIvM6QoVrS+qAVtfyZVuD5lIHrac0me485+Antp0" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-          integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/leaflet-velocity@1.9.2/dist/leaflet-velocity.min.js"
-          integrity="sha384-LtMJygfR9jrlPTx7rf4xhs89fU1QqQ9cMCQn7x6uQ7d4rWtV0WTme0Hw9Y5iK504" crossorigin="anonymous"></script>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

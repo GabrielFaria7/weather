@@ -1,3 +1,7 @@
+import { carregarBiblioteca } from "./bibliotecas.js";
+
+export const carregarGraficos = () => carregarBiblioteca("graficos");
+
 function cor(variavel) {
   return getComputedStyle(document.documentElement).getPropertyValue(variavel).trim();
 }

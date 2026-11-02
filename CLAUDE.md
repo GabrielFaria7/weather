@@ -34,7 +34,8 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   (`painel.js`, `avisos.js`, `atualizacao.js`, `compartilhar.js`, `iqar.js`, `lua.js`, `rotulosMapa.js`, `seriesPorHora.js`, `alertasOficiais.js`, `satelites.js`, `gradeVento.js`, `temperaturaMapa.js`, `resumo.js`, `formato.js`, `preferencias.js`, `servico.js`) e tem
   teste em `tests/js/` (`node:test`; `fetch` e `localStorage` são simulados nos testes). Ao criar lógica nova,
   seguir esse padrão e escrever o teste junto.
-- **Sem build no front:** HTML/CSS/JS puros. Chart.js e Leaflet vêm de CDN em `site/index.html`.
+- **Sem build no front:** HTML/CSS/JS puros. Chart.js, Leaflet e leaflet-velocity vêm de CDN, carregados sob demanda
+  por `site/js/bibliotecas.js` (ver "Abrir rápido").
   Node só é usado para rodar os testes (`node --test`, sem `package.json` nem dependências); não migrar para
   React/Vite sem pedido explícito.
 
@@ -54,7 +55,8 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   ignora encerrados e terminados, fica só com a última `id_sequencia` de cada aviso e ordena: em vigor, mais grave
   (6 Perigo Potencial = amarelo, 7 Perigo = laranja, 8 Grande Perigo = vermelho), mais próximo. Horários do INMET
   são de Brasília (UTC−3). No painel, `alertas_oficiais` é `undefined` fora do Brasil (sem seção), `null` se a
-  consulta falhou (mensagem) ou a lista. O card mostra os 2 primeiros e o resto em "Mais N alertas oficiais".
+  consulta falhou (mensagem) ou a lista; enquanto o INMET não responde (`pendente`), o card mostra "Consultando os
+  alertas oficiais do INMET…". O card mostra os 2 primeiros e o resto em "Mais N alertas oficiais".
   A resposta do INMET (grande, com todos os avisos do país) fica guardada por 5 min (`respostaDoInmet`), e
   `buscarAlertasDosLugares` usa essa mesma resposta para vários lugares; só falhas não são guardadas.
 - **Alertas nos favoritos:** `favoritos.js` pede os alertas de todas as favoritas de uma vez
@@ -140,12 +142,14 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   transparência (limites por satélite em `brilho`), para sobrar só as nuvens. Pixels de tom quente (luzes das cidades à noite no GeoColor, deserto de dia)
   são descartados. No MTG não usar `rgb_geocolour`: à noite as luzes das cidades grandes ficam brancas e parecem
   nuvens. Acima de 65° de latitude mostra aviso de sem cobertura.
-- **Segurança (`site/index.html`):** os scripts e o CSS de CDN têm `integrity` (SRI, sha384) + `crossorigin`, com
-  versão exata na URL; a `<meta http-equiv="Content-Security-Policy">` só libera os domínios usados (scripts:
+- **Segurança (`site/index.html`):** os scripts e o CSS de CDN ficam em `BIBLIOTECAS` (`site/js/bibliotecas.js`) com
+  `integrity` (SRI, sha384) e versão exata na URL; `carregarBiblioteca` cria o `<script>`/`<link>` com `integrity` e
+  `crossOrigin = "anonymous"` (o CSS do Leaflet entra antes do `app.css`, para o nosso CSS continuar valendo). A fonte
+  Inter é do próprio site (`font-src 'self'`, sem Google Fonts); a `<meta http-equiv="Content-Security-Policy">` só libera os domínios usados (scripts:
   cdnjs e unpkg; conexões: o próprio site (blocos de cidades), Open-Meteo, INMET, NASA GIBS e EUMETSAT; imagens: tiles do OpenStreetMap, GIBS, EUMETSAT e o relevo em `s3.amazonaws.com/elevation-tiles-prod/`).
   O único script inline (o do tema, no `<head>`) é liberado pelo hash sha256 dele. `tests/js/seguranca.test.mjs`
-  confere tudo isso: ao editar o script do tema, o teste falha e mostra o hash novo para pôr na CSP; ao trocar a
-  versão de uma biblioteca, recalcular o `integrity` (`curl -sL URL | openssl dgst -sha384 -binary | openssl base64 -A`)
+  confere tudo isso (lendo `BIBLIOTECAS`): ao editar o script do tema, o teste falha e mostra o hash novo para pôr na
+  CSP; ao trocar a versão de uma biblioteca (em `bibliotecas.js` e na lista `BIBLIOTECAS` do `sw.js`), recalcular o `integrity` (`curl -sL URL | openssl dgst -sha384 -binary | openssl base64 -A`)
   e conferir com o hash oficial; ao usar um domínio novo, incluí-lo na diretiva certa da CSP. Estilos inline
   (`style="..."`) são usados pelo código, por isso `style-src` tem `'unsafe-inline'`. O GitHub Pages não permite
   cabeçalhos HTTP próprios, então a CSP fica na meta tag (sem `frame-ancestors`, que só vale por cabeçalho).
@@ -157,7 +161,8 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
 - **Aplicativo (PWA):** `site/manifest.webmanifest` (caminhos relativos; ícones `icone-192.png`, `icone-512.png` e
   `icone-mascaravel-512.png`, este com o desenho dentro da área segura do Android) e `site/sw.js`, registrado em
   `main.js` (`iniciarAplicativo`, que também mostra "Instalar como aplicativo" nas configurações quando o navegador
-  oferece). O service worker guarda na instalação `ARQUIVOS_DO_SITE` e as `BIBLIOTECAS` de CDN; arquivos do site vêm
+  oferece). O service worker guarda na instalação `ARQUIVOS_DO_SITE` (inclui `fontes/inter-latin.woff2`) e as
+  `BIBLIOTECAS` de CDN (iguais às de `bibliotecas.js`, o teste confere); arquivos do site vêm
   da rede primeiro (cache só se a rede falhar ou demorar 5 s), bibliotecas de CDN vêm do cache primeiro; APIs,
   satélites e tiles do mapa passam direto (não são guardados). **Ao criar ou remover arquivo em `site/`, ou trocar a
   versão de uma biblioteca de CDN, atualizar as listas do `sw.js`** (`tests/js/aplicativo.test.mjs` falha se faltar).
@@ -203,6 +208,24 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   continua) e guarda a rolagem da lista de horas. Se a busca cair na previsão salva (`salvaEm`), mantém o que está na
   tela. O card principal mostra "Atualizado há X min" (`textoAtualizacao`), que também é um botão para atualizar na
   hora; se falhar pelo botão, aparece um aviso.
+- **Abrir rápido (Lighthouse no celular: 72 → 98, saltos de layout 0):** nada de CDN trava a primeira pintura.
+  `carregarBiblioteca` (`bibliotecas.js`, uma vez por biblioteca, com nova tentativa se falhar): Chart.js quando o
+  gráfico por hora chega a 300 px da tela (`IntersectionObserver` em `porHora.js`) ou ao abrir a janela de um dia;
+  Leaflet (CSS + JS) quando o mapa chega a 400 px da tela ou ao tocar numa camada (`garantirMapa` em `mapa.js`);
+  leaflet-velocity só ao ligar o Vento. A fonte Inter fica em `site/fontes/` (variável, `latin` com `preload` e
+  `latin-ext` só se aparecer letra dela; licença SIL OFL em `LICENCA-INTER.txt`, que precisa ir junto). O painel abre em
+  duas etapas: `buscarPrevisao` só exige a previsão; qualidade do ar, mar e INMET (o INMET manda ~280 KB sem compressão
+  e costuma levar ~2 s) esperam no máximo 400 ms (`ESPERA_COMPLEMENTOS_MS`). Se não chegarem, o painel vem com
+  `pendente: true` e a promessa `complementos`; os cards mostram "Consultando…" e `esperarComplementos` (`main.js`)
+  redesenha só alertas, indicadores, qualidade do ar e mar (`renderizarComplementos`) quando eles chegam.
+  `html { scrollbar-gutter: stable }` e `main { min-height: 100vh }` evitam os saltos da barra de rolagem e do rodapé.
+- **Acessibilidade (Lighthouse 100, axe sem problemas nos dois temas):** contraste mínimo de 4,5 em texto pequeno:
+  `--texto-2` claro é `#57667B` (o antigo `#64748B` dava 4,34 sobre `--superficie-2`); etiquetas de nível usam
+  `--cor-texto` (amarelo do INMET `--atencao-texto: #92600E` no claro) e os níveis da qualidade do ar têm `--cor-texto`
+  mais escuro no claro e mais claro no escuro (o anel continua com a cor viva). Dentro de `<dl>`, cada `<div>` só pode
+  ter `<dt>`/`<dd>` (o detalhe vai num segundo `<dd class="astro-detalhe">`). Para auditar: axe-core via Playwright com
+  `bypassCSP` (a CSP do site bloqueia o script injetado), em claro, escuro, celular, janela do dia, configurações,
+  mapa e "Consultando…".
 - **Previsão offline:** `buscarPrevisao` (`servico.js`) guarda cada previsão que deu certo em `previsoesSalvas`
   (`preferencias.js`, localStorage, até 5 cidades). Se a consulta falhar (sem internet, limite 429 etc.) e houver
   previsão salva da cidade com menos de 7 dias, devolve o painel com `salvaEm`; `main.js` mostra o aviso
@@ -230,7 +253,7 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   (Settings → Pages → Source: GitHub Actions).
 - **Dependabot** (`.github/dependabot.yml`): toda segunda-feira, às 9h de Brasília, abre no máximo um pull request
   por grupo (pip e GitHub Actions) com as versões novas. O workflow de testes roda no PR; se passar, é só fazer o
-  merge. As bibliotecas de CDN em `site/index.html` (Chart.js, Leaflet, leaflet-velocity) o Dependabot não vê:
+  merge. As bibliotecas de CDN em `site/js/bibliotecas.js` (Chart.js, Leaflet, leaflet-velocity) o Dependabot não vê:
   atualizar à mão, recalculando o `integrity` (ver Segurança). leaflet-velocity fica na 1.9.2 (a 2.x mudou de licença).
 - O Render (https://weather-jdpm.onrender.com/) foi desligado; `web.py` e `render.yaml` foram removidos.
 

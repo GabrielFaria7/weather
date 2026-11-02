@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { test } from "node:test";
+import { BIBLIOTECAS } from "../../site/js/bibliotecas.js";
 
 const pasta = new URL("../../site/", import.meta.url);
 const html = readFileSync(new URL("index.html", pasta), "utf8");
@@ -56,9 +57,16 @@ test("o service worker guarda todos os arquivos do site", () => {
   assert.ok(guardados.includes("./") && guardados.includes("index.html") && guardados.includes("manifest.webmanifest"));
 });
 
-test("o service worker guarda as mesmas versões das bibliotecas da página", () => {
-  const daPagina = [...html.matchAll(/<(?:script|link)\b[^>]*(?:src|href)="(https:\/\/(?:cdnjs|unpkg)[^"]+)"/g)].map(([, url]) => url);
-  assert.deepEqual([...listaDoSw("BIBLIOTECAS")].sort(), [...daPagina].sort());
+test("o service worker guarda as mesmas versões das bibliotecas que o site carrega", () => {
+  const doSite = Object.values(BIBLIOTECAS).flat().map(({ url }) => url);
+  assert.deepEqual([...listaDoSw("BIBLIOTECAS")].sort(), [...doSite].sort());
+});
+
+test("a fonte vem do próprio site e o principal fica guardado para usar sem internet", () => {
+  assert.ok(!html.includes("fonts.googleapis.com"));
+  assert.match(html, /<link rel="preload" href="fontes\/inter-latin\.woff2" as="font" type="font\/woff2" crossorigin>/);
+  assert.ok(listaDoSw("ARQUIVOS_DO_SITE").includes("fontes/inter-latin.woff2"));
+  assert.ok(existsSync(new URL("fontes/LICENCA-INTER.txt", pasta)), "a licença da fonte Inter precisa ir junto");
 });
 
 test("a página registra o service worker com caminho relativo", () => {

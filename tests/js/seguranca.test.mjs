@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { BIBLIOTECAS } from "../../site/js/bibliotecas.js";
 
 const html = readFileSync(new URL("../../site/index.html", import.meta.url), "utf8");
 const politica = /<meta http-equiv="Content-Security-Policy"\s+content="([^"]+)">/.exec(html)?.[1].replace(/\s+/g, " ") ?? "";
@@ -26,8 +27,21 @@ test("o script inline do tema está liberado pelo hash certo", () => {
   assert.ok(diretiva("script-src").includes(hash), `atualize o hash no script-src da CSP para ${hash}`);
 });
 
-test("scripts e estilos de CDN têm verificação de integridade", () => {
-  assert.ok(recursosExternos.length >= 4);
+const bibliotecas = Object.values(BIBLIOTECAS).flat();
+const carregador = readFileSync(new URL("../../site/js/bibliotecas.js", import.meta.url), "utf8");
+
+test("bibliotecas de CDN carregadas sob demanda têm integridade e versão exata", () => {
+  assert.ok(bibliotecas.length >= 4);
+  for (const { tipo, url, integridade } of bibliotecas) {
+    assert.ok(["script", "estilo"].includes(tipo), url);
+    assert.match(integridade, /^sha(384|512)-[A-Za-z0-9+/=]+$/, url);
+    assert.match(url, /@\d+\.\d+\.\d+|\/\d+\.\d+\.\d+\//, `versão exata obrigatória: ${url}`);
+  }
+  assert.match(carregador, /elemento\.integrity = integridade;/);
+  assert.match(carregador, /elemento\.crossOrigin = "anonymous";/);
+});
+
+test("scripts e estilos de CDN fixos na página têm verificação de integridade", () => {
   for (const tag of recursosExternos) {
     assert.match(tag, /integrity="sha(384|512)-[A-Za-z0-9+/=]+"/, tag);
     assert.match(tag, /crossorigin="anonymous"/, tag);
@@ -53,5 +67,9 @@ test("a CSP libera todos os domínios que o site usa", () => {
     const origem = new URL(/(?:src|href)="([^"]+)"/.exec(tag)[1]).origin;
     const lista = tag.startsWith("<script") ? diretiva("script-src") : diretiva("style-src");
     assert.ok(lista.includes(origem), `${origem} não está liberado na CSP`);
+  }
+  for (const { tipo, url } of bibliotecas) {
+    const lista = tipo === "script" ? diretiva("script-src") : diretiva("style-src");
+    assert.ok(lista.includes(new URL(url).origin), `${new URL(url).origin} não está liberado na CSP`);
   }
 });

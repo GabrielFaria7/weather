@@ -66,7 +66,8 @@ export function renderizarQualidadeAr(el, dados, ctx = {}) {
     el.innerHTML = `
       <section class="card" id="qualidade-ar" aria-labelledby="titulo-ar">
         <header class="card-cabecalho"><h2 id="titulo-ar">Qualidade do ar</h2></header>
-        <div class="estado-mini">${iconeUI("folha")}<p>Dados de qualidade do ar indisponíveis para este local agora.</p></div>
+        <div class="estado-mini">${iconeUI("folha")}<p>${dados.pendente
+          ? "Consultando a qualidade do ar…" : "Dados de qualidade do ar indisponíveis para este local agora."}</p></div>
       </section>`;
     return;
   }

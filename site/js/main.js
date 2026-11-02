@@ -53,6 +53,7 @@ async function carregar(local) {
     atualizarEndereco(local);
     document.title = `${dados.local.nome} · Weather`;
     montarPainel();
+    esperarComplementos(dados);
   } catch (erro) {
     if (meuPedido !== numeroDoPedido) return;
     estado.carregando = false;
@@ -88,6 +89,7 @@ async function atualizarEmSegundoPlano({ manual = false } = {}) {
       atualizou = true;
       if (estavaSalva) montarPainel();
       else redesenharMantendoRolagem();
+      esperarComplementos(dados);
     }
   } catch {
     atualizou = false;
@@ -98,6 +100,24 @@ async function atualizarEmSegundoPlano({ manual = false } = {}) {
       mostrarAviso("Não foi possível atualizar agora. Tente de novo em instantes.");
     }
   }
+}
+
+function esperarComplementos(dados) {
+  dados.complementos?.then((extras) => {
+    if (estado.dados !== dados) return;
+    Object.assign(dados, extras, { pendente: false, complementos: null });
+    renderizarComplementos();
+  }).catch(() => {});
+}
+
+function renderizarComplementos() {
+  if (!estado.dados || !area("alertas")) return;
+  const ctx = contexto();
+  renderizarAlertas(area("alertas"), estado.dados);
+  renderizarIndicadores(area("indicadores"), estado.dados, ctx);
+  renderizarQualidadeAr(area("ar"), estado.dados, ctx);
+  renderizarMar(area("mar"), estado.dados, ctx);
+  principal.querySelector(".painel")?.classList.toggle("com-mar", Boolean(estado.dados.mar));
 }
 
 function marcarAtualizacao() {

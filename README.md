@@ -83,6 +83,8 @@ a comparação com ontem ("Hoje está 3° mais quente que ontem") e um botão pa
 cada cidade favorita do Brasil mostra um selo colorido quando tem alerta oficial do INMET.
 No fim do painel ficam a **Lua** (fase, % iluminada, nascer e pôr, próximas lua cheia e nova, calculados no navegador)
 e, para cidades do litoral, o **Mar** (altura, período e direção das ondas e temperatura da água, da Open-Meteo Marine).
+O painel aparece assim que a previsão chega; alertas do INMET, qualidade do ar e mar completam em seguida, e os gráficos e o
+mapa só são baixados quando chegam perto da tela.
 Com o painel aberto, a previsão se atualiza sozinha a cada 15 minutos (o card principal mostra "Atualizado há X min"; toque nele para atualizar na hora).
 
 > **Instale como aplicativo:** no Chrome/Edge, use o ícone de instalar na barra de endereço (ou
@@ -173,6 +175,8 @@ A cada push no `main` (e em cada pull request), o GitHub Actions roda os dois so
 | `site/dados/cidades/` | Cidades do GeoNames em blocos de 10° (geradas por `ferramentas/gerar_cidades.py`) |
 | `site/js/lua.js` | Calcula a fase da lua, o nascer e o pôr e as próximas lua cheia e nova |
 | `site/js/compartilhar.js` | Monta o texto e o link para compartilhar (sem expor a localização exata do GPS) |
+| `site/js/bibliotecas.js` | Carrega Chart.js e Leaflet da CDN só quando precisa, com verificação de integridade |
+| `site/fontes/` | Fonte Inter (licença SIL OFL) servida pelo próprio site |
 | `site/js/atualizacao.js` | Decide quando atualizar a previsão sozinho e escreve "Atualizado há X min" |
 | `site/js/formato.js` / `preferencias.js` | Formatação (temperatura, vento, horas) e preferências/favoritos salvos no navegador |
 | `site/js/componentes/` | Uma parte da tela por arquivo (card atual, por hora, 10 dias, mapa...) |

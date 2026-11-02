@@ -1,4 +1,4 @@
-import { periodoDoAlerta } from "../alertasOficiais.js";
+import { noBrasil, periodoDoAlerta } from "../alertasOficiais.js";
 import { esc } from "../formato.js";
 import { iconeUI } from "../icones.js";
 
@@ -34,9 +34,11 @@ function listaOficial(alertas) {
   </ul>`;
 }
 
-function secaoOficial(alertas) {
-  if (alertas === undefined) return "";
-  const conteudo = alertas === null
+function secaoOficial(alertas, consultando) {
+  if (alertas === undefined && !consultando) return "";
+  const conteudo = consultando
+    ? `<div class="estado-mini">${iconeUI("recarregar")}<p>Consultando os alertas oficiais do INMET…</p></div>`
+    : alertas === null
     ? `<div class="estado-mini">${iconeUI("semSinal")}<p>Não foi possível consultar os alertas do INMET agora.</p></div>`
     : alertas.length
       ? listaOficial(alertas.slice(0, OFICIAIS_VISIVEIS))
@@ -75,8 +77,8 @@ function secaoAutomatica(avisos, comOficiais) {
     </div>`;
 }
 
-function rodape(dados) {
-  if (dados.alertas_oficiais !== undefined) {
+function rodape(comOficiais) {
+  if (comOficiais) {
     return `Alertas oficiais do ${LINK_INMET}, em horário de Brasília. Os calculados pela previsão
       <strong>não são alertas oficiais</strong>.`;
   }
@@ -93,7 +95,8 @@ function indicarRolagem(corpo) {
 }
 
 export function renderizarAlertas(el, dados) {
-  const comOficiais = dados.alertas_oficiais !== undefined;
+  const consultando = Boolean(dados.pendente) && dados.alertas_oficiais === undefined && noBrasil(dados.local);
+  const comOficiais = dados.alertas_oficiais !== undefined || consultando;
   el.innerHTML = `
     <section class="card" aria-labelledby="titulo-alertas">
       <header class="card-cabecalho">
@@ -101,9 +104,9 @@ export function renderizarAlertas(el, dados) {
         ${comOficiais ? "" : '<span class="selo">Automático</span>'}
       </header>
       <div class="alertas-corpo">
-        ${secaoOficial(dados.alertas_oficiais)}
+        ${secaoOficial(dados.alertas_oficiais, consultando)}
         ${secaoAutomatica(dados.avisos, comOficiais)}
-        <p class="card-fonte">${rodape(dados)}</p>
+        <p class="card-fonte">${rodape(comOficiais)}</p>
       </div>
     </section>`;
   indicarRolagem(el.querySelector(".alertas-corpo"));

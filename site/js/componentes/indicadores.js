@@ -116,7 +116,7 @@ export function renderizarIndicadores(el, dados, ctx) {
       icone: "folha", titulo: "Qualidade do ar",
       valor: indiceAr?.indice ?? "—", unidade: indiceAr?.sigla ?? "",
       visual: escala(indiceAr?.porcento ?? 0, indiceAr?.tipo === "iqar" ? "escala-iqar" : "escala-ar"),
-      legenda: indiceAr?.nivel ?? "Indisponível no momento",
+      legenda: indiceAr?.nivel ?? (dados.pendente ? "Consultando…" : "Indisponível no momento"),
     }),
   ];
 

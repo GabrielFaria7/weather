@@ -22,6 +22,7 @@ const JANELA_SATELITE_MS = 4 * 60 * 60 * 1000;
 const VALIDADE_PREVISAO_SALVA_MS = 7 * 24 * 60 * 60 * 1000;
 const VALIDADE_CLIMA_ATUAL_MS = 10 * 60 * 1000;
 const VALIDADE_ALERTAS_MS = 5 * 60 * 1000;
+const ESPERA_COMPLEMENTOS_MS = 400;
 
 const POLUENTES = "pm10,pm2_5,ozone,nitrogen_dioxide,sulphur_dioxide,carbon_monoxide";
 const PARAMETROS_QUALIDADE_AR = {
@@ -309,17 +310,13 @@ export async function buscarPrevisao(local, opcoes) {
   const posicao = { latitude: local.latitude, longitude: local.longitude };
   const dadosDoLocal = { nome: local.nome, estado: local.estado, pais: local.pais, ...posicao };
   const alertasOficiais = buscarAlertasOficiais(dadosDoLocal, opcoes);
+  const pedidoAr = pedirOpenMeteo(URL_QUALIDADE_AR, { ...posicao, ...PARAMETROS_QUALIDADE_AR }, opcoes)
+    .then((dados) => (dados.current ? { current: dados.current, hourly: dados.hourly ?? null } : null))
+    .catch(() => null);
+  const pedidoMar = pedirOpenMeteo(URL_MAR, { ...posicao, ...PARAMETROS_MAR }, opcoes).catch(() => null);
   let previsao;
-  let ar;
-  let mar;
   try {
-    [previsao, ar, mar] = await Promise.all([
-      pedirOpenMeteo(URL_PREVISAO, { ...posicao, ...PARAMETROS_PREVISAO }, opcoes),
-      pedirOpenMeteo(URL_QUALIDADE_AR, { ...posicao, ...PARAMETROS_QUALIDADE_AR }, opcoes)
-        .then((dados) => (dados.current ? { current: dados.current, hourly: dados.hourly ?? null } : null))
-        .catch(() => null),
-      pedirOpenMeteo(URL_MAR, { ...posicao, ...PARAMETROS_MAR }, opcoes).catch(() => null),
-    ]);
+    previsao = await pedirOpenMeteo(URL_PREVISAO, { ...posicao, ...PARAMETROS_PREVISAO }, opcoes);
   } catch (erro) {
     const salva = erro.name === "AbortError" ? null : previsaoSalvaRecente(posicao);
     if (!salva) throw erro;
@@ -327,7 +324,23 @@ export async function buscarPrevisao(local, opcoes) {
     return { ...painel, alertas_oficiais: await alertasOficiais, salvaEm: salva.quando, motivo: erro.message };
   }
 
-  const painel = montarPainel(dadosDoLocal, previsao, ar, mar);
-  previsoesSalvas.guardar(posicao, previsao, ar);
-  return { ...painel, alertas_oficiais: await alertasOficiais };
+  const montar = ([ar, mar, alertas]) => {
+    const painel = montarPainel(dadosDoLocal, previsao, ar, mar);
+    previsoesSalvas.guardar(posicao, previsao, ar);
+    return { ...painel, alertas_oficiais: alertas };
+  };
+  const complementos = Promise.all([pedidoAr, pedidoMar, alertasOficiais]);
+  const prontos = await Promise.race([
+    complementos,
+    new Promise((resolver) => setTimeout(() => resolver(null), ESPERA_COMPLEMENTOS_MS)),
+  ]);
+  if (prontos) return montar(prontos);
+  return {
+    ...montar([null, null, undefined]),
+    pendente: true,
+    complementos: complementos.then((resultados) => {
+      const { qualidade_ar, mar, alertas_oficiais } = montar(resultados);
+      return { qualidade_ar, mar, alertas_oficiais };
+    }),
+  };
 }

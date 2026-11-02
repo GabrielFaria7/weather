@@ -1,10 +1,11 @@
 import { direcao, hora, milimetros, porcentagem, temperatura, vento } from "../formato.js";
 import { iconeClima, iconeUI } from "../icones.js";
-import { coresDoTema, degrade, graficoDisponivel, reduzirMovimento } from "../graficos.js";
+import { carregarGraficos, coresDoTema, degrade, graficoDisponivel, reduzirMovimento } from "../graficos.js";
 import { dicaPorHora, seriesPorHora, VARIAVEIS_POR_HORA, variavelValida } from "../seriesPorHora.js";
 
 let grafico = null;
 let variavelAtiva = "temperatura";
+let observadorGrafico = null;
 
 function itemHora(h, i, ctx) {
   const seta = h.direcao_vento == null ? ""
@@ -44,7 +45,7 @@ export function renderizarPorHora(el, dados, ctx) {
       </header>
       <div class="horas-trilho" tabindex="0" aria-label="Próximas 24 horas, role para os lados">
         <div class="horas-conteudo" style="--colunas:${horas.length}">
-          <div class="horas-grafico">${graficoDisponivel() ? '<canvas aria-hidden="true"></canvas>' : ""}</div>
+          <div class="horas-grafico"><canvas aria-hidden="true"></canvas></div>
           <ol class="horas-lista">${horas.map((h, i) => itemHora(h, i, ctx)).join("")}</ol>
         </div>
       </div>
@@ -61,7 +62,26 @@ export function renderizarPorHora(el, dados, ctx) {
   const canvas = el.querySelector("canvas");
   const desenhar = () => {
     grafico?.destroy();
-    grafico = canvas ? criarGrafico(canvas, variavelAtiva, horas, ctx) : null;
+    grafico = null;
+    if (!canvas) return;
+    if (graficoDisponivel()) {
+      grafico = criarGrafico(canvas, variavelAtiva, horas, ctx);
+      return;
+    }
+    const carregar = () => carregarGraficos().then(() => {
+      if (canvas.isConnected && !grafico) grafico = criarGrafico(canvas, variavelAtiva, horas, ctx);
+    }).catch(() => {});
+    observadorGrafico?.disconnect();
+    if (!("IntersectionObserver" in window)) {
+      carregar();
+      return;
+    }
+    observadorGrafico = new IntersectionObserver((entradas) => {
+      if (!entradas.some((entrada) => entrada.isIntersecting)) return;
+      observadorGrafico.disconnect();
+      carregar();
+    }, { rootMargin: "300px 0px" });
+    observadorGrafico.observe(canvas);
   };
   el.querySelectorAll(".horas-variaveis [data-variavel]").forEach((botao) => {
     botao.addEventListener("click", () => {
