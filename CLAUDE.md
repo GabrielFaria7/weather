@@ -31,7 +31,7 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
 - Não há servidor próprio: o Python é só o app do terminal. `descricoes.py` continua em Python porque o terminal
   usa; a tabela de descrições existe nas duas linguagens.
 - **Lógica pura fora dos componentes:** o que não depende de Leaflet nem do DOM fica em módulos próprios
-  (`painel.js`, `avisos.js`, `atualizacao.js`, `iqar.js`, `seriesPorHora.js`, `alertasOficiais.js`, `satelites.js`, `gradeVento.js`, `temperaturaMapa.js`, `resumo.js`, `formato.js`, `preferencias.js`, `servico.js`) e tem
+  (`painel.js`, `avisos.js`, `atualizacao.js`, `compartilhar.js`, `iqar.js`, `seriesPorHora.js`, `alertasOficiais.js`, `satelites.js`, `gradeVento.js`, `temperaturaMapa.js`, `resumo.js`, `formato.js`, `preferencias.js`, `servico.js`) e tem
   teste em `tests/js/` (`node:test`; `fetch` e `localStorage` são simulados nos testes). Ao criar lógica nova,
   seguir esse padrão e escrever o teste junto.
 - **Sem build no front:** HTML/CSS/JS puros. Chart.js e Leaflet vêm de CDN em `site/index.html`.
@@ -146,6 +146,17 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   como chuva a hora com chance ≥ 50% e ≥ 0,1 mm), temperatura (máxima de hoje, se ainda vai esquentar, ou "caindo até"
   a mínima das próximas horas) e rajadas ≥ 50 km/h. Respeita °C/°F, unidade de vento e relógio de 12/24 h, com
   "da 01:00" e "da meia-noite" no singular. Previsões salvas sem mm/rajadas por hora usam só a chance.
+- **Ontem × hoje:** a previsão pede `past_days: 1`, então `daily` e `hourly` começam no dia anterior.
+  `montarPainel` separa esse dia em `ontem` (`{ data, max, min }`) e deixa em `dias` só de hoje em diante (os
+  "Próximos 10 dias", o Máx/Mín do card e os alertas automáticos não podem ver o dia de ontem). O card principal
+  mostra `comparacaoComOntem` (`resumo.js`): "Hoje está 3° mais quente/frio que ontem" ou "parecida", comparando as
+  máximas **já arredondadas** na unidade escolhida (senão a frase não bate com os números da tela). Previsões salvas
+  sem o dia anterior ficam sem a frase.
+- **Compartilhar:** botão ao lado da estrela no card principal. `conteudoParaCompartilhar` (`compartilhar.js`) monta
+  título, texto (tempo de agora, máx/mín e o resumo das próximas horas) e o link da cidade; `main.js` usa o menu do
+  sistema (`navigator.share`) e, se não houver, copia texto + link (`navigator.clipboard`) com aviso. Privacidade: para
+  "Sua localização" (GPS), o link vai com as coordenadas arredondadas para 2 casas (~1 km) e o nome "Local
+  compartilhado", nunca a posição exata.
 - **Atualização automática:** com o painel aberto e a aba visível, `main.js` busca a previsão de novo a cada 15 min
   (`deveAtualizar` e `INTERVALO_ATUALIZACAO_MS` em `atualizacao.js`; confere a cada 30 s e no `visibilitychange`, então
   quem volta ao app depois de horas recebe dados novos na hora). Não atualiza sem internet nem com a janela de um dia

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { resumoDoDia } from "../../site/js/resumo.js";
+import { comparacaoComOntem, resumoDoDia } from "../../site/js/resumo.js";
 
 const pad = (n) => String(n).padStart(2, "0");
 
@@ -91,4 +91,25 @@ test("previsão salva antiga, sem milímetros nem rajadas por hora", () => {
 test("sem horas não há resumo", () => {
   assert.equal(resumoDoDia([], ctx), "");
   assert.equal(resumoDoDia(undefined, ctx), "");
+});
+
+test("hoje comparado com ontem pela máxima", () => {
+  assert.equal(comparacaoComOntem(28.4, 25.1), "Hoje está 3° mais quente que ontem");
+  assert.equal(comparacaoComOntem(22, 26.6), "Hoje está 5° mais frio que ontem");
+  assert.equal(comparacaoComOntem(25.3, 25), "Hoje está com temperatura parecida com a de ontem");
+  assert.equal(comparacaoComOntem(25, 25.4), "Hoje está com temperatura parecida com a de ontem");
+});
+
+test("diferença bate com as máximas mostradas na tela", () => {
+  assert.equal(comparacaoComOntem(26.5, 25.1), "Hoje está 2° mais quente que ontem");
+  assert.equal(comparacaoComOntem(26.4, 25.6), "Hoje está com temperatura parecida com a de ontem");
+});
+
+test("diferença em Fahrenheit é convertida sem somar 32", () => {
+  assert.equal(comparacaoComOntem(28, 25, "F"), "Hoje está 5° mais quente que ontem");
+});
+
+test("sem o dia de ontem não há comparação", () => {
+  assert.equal(comparacaoComOntem(28, null), "");
+  assert.equal(comparacaoComOntem(undefined, 25), "");
 });

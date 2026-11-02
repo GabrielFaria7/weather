@@ -79,7 +79,8 @@ detalhes), indicadores (UV, pressão, visibilidade, sol...), qualidade do ar (í
 alertas oficiais do INMET e automáticos,
 mapa com temperatura (mapa de calor com relevo), vento e nuvens animados, cidades favoritas (com a temperatura de agora em cada uma), °C/°F, modo claro/escuro e localização atual.
 O card principal tem um resumo das próximas horas em uma frase ("Chuva a partir das 15:00 (80% de chance) e máxima de 28° às 14:00"),
-e cada cidade favorita do Brasil mostra um selo colorido quando tem alerta oficial do INMET.
+a comparação com ontem ("Hoje está 3° mais quente que ontem") e um botão para compartilhar a previsão (WhatsApp etc.);
+cada cidade favorita do Brasil mostra um selo colorido quando tem alerta oficial do INMET.
 Com o painel aberto, a previsão se atualiza sozinha a cada 15 minutos (o card principal mostra "Atualizado há X min"; toque nele para atualizar na hora).
 
 > **Instale como aplicativo:** no Chrome/Edge, use o ícone de instalar na barra de endereço (ou
@@ -135,7 +136,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-JavaScript (painel, alertas, resumo do dia, atualização automática, consultas às APIs, previsão offline, satélites, vento, mapa de calor, formatação, preferências, aplicativo e segurança da página) — usa o executor de testes que já vem no Node.js 22 ou mais novo:
+JavaScript (painel, alertas, resumo do dia, compartilhar, atualização automática, consultas às APIs, previsão offline, satélites, vento, mapa de calor, formatação, preferências, aplicativo e segurança da página) — usa o executor de testes que já vem no Node.js 22 ou mais novo:
 
 ```bash
 node --test "tests/js/*.test.mjs"
@@ -164,7 +165,8 @@ A cada push no `main` (e em cada pull request), o GitHub Actions roda os dois so
 | `site/js/satelites.js` | Escolhe o satélite das nuvens pela região e deixa só as nuvens visíveis na imagem |
 | `site/js/gradeVento.js` | Converte a grade de vento para o formato da animação e acha o ponto sob o mouse |
 | `site/js/temperaturaMapa.js` | Pinta o mapa de calor da temperatura, corrigida pela altitude do relevo |
-| `site/js/resumo.js` | Escreve o resumo das próximas horas em uma frase |
+| `site/js/resumo.js` | Escreve o resumo das próximas horas e a comparação com ontem |
+| `site/js/compartilhar.js` | Monta o texto e o link para compartilhar (sem expor a localização exata do GPS) |
 | `site/js/atualizacao.js` | Decide quando atualizar a previsão sozinho e escreve "Atualizado há X min" |
 | `site/js/formato.js` / `preferencias.js` | Formatação (temperatura, vento, horas) e preferências/favoritos salvos no navegador |
 | `site/js/componentes/` | Uma parte da tela por arquivo (card atual, por hora, 10 dias, mapa...) |

@@ -31,6 +31,7 @@ const PARAMETROS_QUALIDADE_AR = {
 
 const PARAMETROS_PREVISAO = {
   timezone: "auto",
+  past_days: 1,
   forecast_days: 10,
   current: "temperature_2m,apparent_temperature,relative_humidity_2m,dew_point_2m,"
     + "wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code,is_day,"

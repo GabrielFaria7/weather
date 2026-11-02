@@ -55,3 +55,41 @@ test("previsão com formato inesperado", () => {
   delete previsao.hourly.time;
   assert.throws(() => montarPainel(LOCAL, previsao), /formato inesperado/);
 });
+
+function comOntem(previsao, { maxima = 27, minima = 21, chuvaMm = 60 } = {}) {
+  const horas = [...Array(24)].map((_, h) => `2026-10-28T${String(h).padStart(2, "0")}:00`);
+  const antes = (lista, valores) => [...valores, ...lista];
+  const { hourly, daily } = previsao;
+  return {
+    ...previsao,
+    hourly: Object.fromEntries(Object.entries(hourly).map(([chave, lista]) =>
+      [chave, antes(lista, chave === "time" ? horas : horas.map((_, i) => lista[i]))])),
+    daily: {
+      ...Object.fromEntries(Object.entries(daily).map(([chave, lista]) => [chave, antes(lista, [lista[0]])])),
+      time: ["2026-10-28", ...daily.time],
+      temperature_2m_max: [maxima, ...daily.temperature_2m_max],
+      temperature_2m_min: [minima, ...daily.temperature_2m_min],
+      precipitation_sum: [chuvaMm, ...daily.precipitation_sum],
+    },
+  };
+}
+
+test("o dia de ontem fica separado e não entra nos próximos dias", () => {
+  const painel = montarPainel(LOCAL, comOntem(previsaoFalsa()));
+  assert.deepEqual(painel.ontem, { data: "2026-10-28", max: 27, min: 21 });
+  assert.deepEqual(painel.dias.map((d) => d.data), ["2026-10-29", "2026-10-30"]);
+  assert.equal(painel.dias[0].max, 31);
+  assert.equal(painel.por_hora[0].horario, "2026-10-29T17:00");
+  assert.equal(painel.por_hora.length, 24);
+});
+
+test("chuva de ontem não vira alerta automático", () => {
+  const painel = montarPainel(LOCAL, comOntem(previsaoFalsa(), { chuvaMm: 80 }));
+  assert.ok(painel.avisos.every((a) => a.data !== "2026-10-28"));
+});
+
+test("previsão sem o dia de ontem continua funcionando", () => {
+  const painel = montarPainel(LOCAL, previsaoFalsa());
+  assert.equal(painel.ontem, null);
+  assert.equal(painel.dias.length, 2);
+});

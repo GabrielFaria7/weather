@@ -1,4 +1,4 @@
-import { hora, temperatura, vento } from "./formato.js";
+import { converterTemperatura, hora, temperatura, vento } from "./formato.js";
 
 const JANELA_HORAS = 12;
 const CHANCE_DE_CHUVA = 50;
@@ -68,4 +68,12 @@ export function resumoDoDia(horas, ctx = {}) {
   const trechos = [trechoChuva(janela, ctx), trechoTemperatura(horas, ctx), trechoVento(janela, ctx)].filter(Boolean);
   const frase = trechos.length > 1 ? `${trechos.slice(0, -1).join(", ")} e ${trechos.at(-1)}` : trechos[0];
   return `${maiuscula(frase)}.`;
+}
+
+export function comparacaoComOntem(maximaDeHoje, maximaDeOntem, unidade = "C") {
+  if (maximaDeHoje == null || maximaDeOntem == null) return "";
+  const naTela = (valor) => Math.round(converterTemperatura(valor, unidade));
+  const diferenca = naTela(maximaDeHoje) - naTela(maximaDeOntem);
+  if (diferenca === 0) return "Hoje está com temperatura parecida com a de ontem";
+  return `Hoje está ${Math.abs(diferenca)}° mais ${diferenca > 0 ? "quente" : "frio"} que ontem`;
 }

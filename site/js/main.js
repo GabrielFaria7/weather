@@ -1,4 +1,5 @@
 import { deveAtualizar, textoAtualizacao } from "./atualizacao.js";
+import { conteudoParaCompartilhar } from "./compartilhar.js";
 import { buscarPrevisao } from "./servico.js";
 import { agoraNaCidade, dataHoraLocal, esc } from "./formato.js";
 import { iconeUI, preencherIcones } from "./icones.js";
@@ -231,6 +232,25 @@ function localizar() {
   );
 }
 
+async function compartilhar() {
+  if (!estado.dados) return;
+  const conteudo = conteudoParaCompartilhar(estado.dados, contexto(), `${location.origin}${location.pathname}`);
+  if (navigator.share) {
+    try {
+      await navigator.share(conteudo);
+      return;
+    } catch (erro) {
+      if (erro.name === "AbortError") return;
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(`${conteudo.text}\n${conteudo.url}`);
+    mostrarAviso("Previsão e link copiados. É só colar onde quiser.");
+  } catch {
+    mostrarAviso("Não foi possível compartilhar agora.");
+  }
+}
+
 function alternarFavorito() {
   const salvo = favoritos.alternar(estado.dados.local);
   mostrarAviso(salvo ? "Cidade salva nos favoritos." : "Cidade removida dos favoritos.");
@@ -338,6 +358,7 @@ function iniciar() {
   principal.addEventListener("click", (e) => {
     if (e.target.closest('[data-acao="favorito"]')) alternarFavorito();
     if (e.target.closest('[data-acao="atualizar"]')) atualizarEmSegundoPlano({ manual: true });
+    if (e.target.closest('[data-acao="compartilhar"]')) compartilhar();
   });
 
   document.querySelector(".logo").addEventListener("click", (e) => { e.preventDefault(); mostrarInicio(); });

@@ -1,13 +1,14 @@
 import { textoAtualizacao } from "../atualizacao.js";
 import { agoraNaCidade, direcao, esc, nomeCompleto, porcentagem, temperatura, vento } from "../formato.js";
 import { classeFundo, iconeClima, iconeUI } from "../icones.js";
-import { resumoDoDia } from "../resumo.js";
+import { comparacaoComOntem, resumoDoDia } from "../resumo.js";
 
 export function renderizarAtual(el, dados, ctx) {
   const { local, atual, dias, fuso } = dados;
   const hoje = dias[0];
   const unidadeTexto = ctx.unidade === "F" ? "F" : "C";
   const resumo = resumoDoDia(dados.por_hora, ctx);
+  const comOntem = comparacaoComOntem(hoje?.max, dados.ontem?.max, ctx.unidade);
 
   el.innerHTML = `
     <article class="card card-atual ${classeFundo(atual.codigo, atual.dia)}" id="hoje" aria-labelledby="atual-local">
@@ -20,11 +21,17 @@ export function renderizarAtual(el, dados, ctx) {
             ${iconeUI("recarregar")}<span data-atualizado>${esc(textoAtualizacao(ctx.atualizadoEm))}</span>
           </button>
         </div>
-        <button class="btn-favorito" type="button" data-acao="favorito" aria-pressed="${ctx.favorito}"
-                aria-label="${ctx.favorito ? "Remover dos favoritos" : "Salvar nos favoritos"}"
-                title="${ctx.favorito ? "Remover dos favoritos" : "Salvar nos favoritos"}">
-          ${iconeUI("estrela")}
-        </button>
+        <div class="atual-acoes">
+          <button class="btn-compartilhar" type="button" data-acao="compartilhar"
+                  aria-label="Compartilhar a previsão" title="Compartilhar a previsão">
+            ${iconeUI("compartilhar")}
+          </button>
+          <button class="btn-favorito" type="button" data-acao="favorito" aria-pressed="${ctx.favorito}"
+                  aria-label="${ctx.favorito ? "Remover dos favoritos" : "Salvar nos favoritos"}"
+                  title="${ctx.favorito ? "Remover dos favoritos" : "Salvar nos favoritos"}">
+            ${iconeUI("estrela")}
+          </button>
+        </div>
       </div>
 
       <div class="atual-centro">
@@ -35,6 +42,7 @@ export function renderizarAtual(el, dados, ctx) {
           </p>
           <p class="atual-desc">${esc(atual.descricao)}</p>
           <p class="atual-sensacao">Sensação térmica de <strong>${temperatura(atual.sensacao, ctx.unidade)}</strong></p>
+          ${comOntem ? `<p class="atual-ontem" title="Máxima de hoje: ${temperatura(hoje.max, ctx.unidade)} · de ontem: ${temperatura(dados.ontem.max, ctx.unidade)}">${esc(comOntem)}</p>` : ""}
         </div>
         <div class="atual-maxmin" aria-label="Máxima e mínima de hoje">
           <span><small>Máx</small><strong>${temperatura(hoje.max, ctx.unidade)}</strong></span>

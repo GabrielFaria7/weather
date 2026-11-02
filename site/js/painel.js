@@ -72,15 +72,18 @@ export function montarPainel(local, previsao, ar = null) {
     throw new Error("Os dados da previsão vieram incompletos. Tente de novo em instantes.");
   }
   const atual = previsao.current;
+  const hoje = String(atual.time).slice(0, 10);
   let todasAsHoras;
-  let dias;
+  let todosOsDias;
   try {
     todasAsHoras = montarHoras(previsao.hourly);
-    dias = montarDias(previsao.daily, todasAsHoras);
+    todosOsDias = montarDias(previsao.daily, todasAsHoras);
   } catch {
     throw new Error("Os dados da previsão vieram em um formato inesperado. Tente de novo em instantes.");
   }
   const inicio = Math.max(0, todasAsHoras.findIndex((h) => h.horario.slice(0, 13) === String(atual.time).slice(0, 13)));
+  const ontem = todosOsDias.filter((d) => d.data < hoje).at(-1) ?? null;
+  const dias = todosOsDias.some((d) => d.data >= hoje) ? todosOsDias.filter((d) => d.data >= hoje) : todosOsDias;
 
   return {
     local: { ...local, nome: local.nome || "Sua localização" },
@@ -104,6 +107,7 @@ export function montarPainel(local, previsao, ar = null) {
     },
     por_hora: todasAsHoras.slice(inicio, inicio + HORAS_NO_PAINEL),
     dias,
+    ontem: ontem && { data: ontem.data, max: ontem.max, min: ontem.min },
     qualidade_ar: montarQualidadeAr(ar),
     avisos: gerarAvisos(dias),
   };

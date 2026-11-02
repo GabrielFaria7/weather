@@ -317,14 +317,17 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 .atual-atualizado:hover { color: var(--texto); }
 .atual-atualizado.atualizando .ui-icone { animation: girar 1s linear infinite; }
 
-.btn-favorito {
+.atual-acoes { display: flex; gap: 8px; flex: none; }
+.btn-favorito, .btn-compartilhar {
   display: grid; place-items: center; width: 42px; height: 42px; flex: none;
   border: 1px solid var(--borda); border-radius: 12px; cursor: pointer;
   background: rgba(255, 255, 255, .45); color: var(--texto-2);
   transition: transform .2s, color .2s, background-color .2s;
 }
-:root[data-theme="dark"] .btn-favorito, .fundo-noite .btn-favorito { background: rgba(255, 255, 255, .06); }
+:root[data-theme="dark"] .btn-favorito, .fundo-noite .btn-favorito,
+:root[data-theme="dark"] .btn-compartilhar, .fundo-noite .btn-compartilhar { background: rgba(255, 255, 255, .06); }
 .btn-favorito:hover { transform: scale(1.06); color: var(--solar); }
+.btn-compartilhar:hover { transform: scale(1.06); color: var(--primaria); }
 .btn-favorito[aria-pressed="true"] { color: var(--solar); }
 .btn-favorito[aria-pressed="true"] .ui-icone { fill: var(--solar); }
 
@@ -341,6 +344,7 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 .atual-desc { margin-top: 8px; font-size: 19px; font-weight: 600; }
 .atual-sensacao { color: var(--texto-2); }
 .atual-sensacao strong { color: var(--texto); }
+.atual-ontem { margin-top: 2px; font-size: 13px; color: var(--texto-2); }
 
 .atual-maxmin { display: grid; gap: 10px; text-align: right; }
 .atual-maxmin span { display: flex; flex-direction: column; }
@@ -764,6 +768,8 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
   .segmentado button { padding: 6px 8px; }
   .acoes { gap: 6px; }
   .btn-icone { width: 38px; height: 38px; }
+  .atual-acoes { gap: 6px; }
+  .btn-favorito, .btn-compartilhar { width: 38px; height: 38px; border-radius: 10px; }
   .atual-metricas { grid-template-columns: 1fr; }
   .atual-metricas > div { display: flex; justify-content: space-between; align-items: center; }
   .atual-metricas dd { margin: 0; }
