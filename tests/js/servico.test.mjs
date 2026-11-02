@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, test } from "node:test";
 import {
-  buscarCidades, buscarHorariosSatelite, buscarPrevisao, buscarVentoGrade, ultimosHorarios, urlTileSatelite,
+  buscarCidades, buscarHorariosSatelite, buscarPrevisao, buscarGradeMapa, ultimosHorarios, urlTileSatelite,
 } from "../../site/js/servico.js";
 import { SATELITES } from "../../site/js/satelites.js";
 import { previsaoFalsa } from "./dados_falsos.mjs";
@@ -152,13 +152,19 @@ function respostasDaGrade(url) {
   const latitudes = url.searchParams.get("latitude").split(",");
   return latitudes.map((_, i) => ({
     utc_offset_seconds: -10800,
-    hourly: { time: [1793390400, 1793394000], wind_speed_10m: [i, i + 1], wind_direction_10m: [90, 180] },
+    elevation: 10 * i,
+    hourly: {
+      time: [1793390400, 1793394000],
+      wind_speed_10m: [i, i + 1],
+      wind_direction_10m: [90, 180],
+      temperature_2m: [20 + i / 10, 19],
+    },
   }));
 }
 
-test("grade do vento em volta da cidade", async () => {
+test("grade do mapa (vento e temperatura) em volta da cidade", async () => {
   simularFetch((url) => ({ corpo: respostasDaGrade(url) }));
-  const dados = await buscarVentoGrade({ latitude: -22.9, longitude: -43.2 });
+  const dados = await buscarGradeMapa({ latitude: -22.9, longitude: -43.2 });
   const latitudes = pedidos[0].searchParams.get("latitude").split(",").map(Number);
   const longitudes = pedidos[0].searchParams.get("longitude").split(",").map(Number);
   assert.equal(latitudes.length, 169);
@@ -169,12 +175,13 @@ test("grade do vento em volta da cidade", async () => {
   assert.deepEqual(dados.grade, { norte: -19.9, oeste: -46.2, passo: 0.5, linhas: 13, colunas: 13 });
   assert.equal(dados.pontos.length, 169);
   assert.equal(dados.deslocamento, -10800);
-  assert.deepEqual(dados.pontos[5], { velocidade: [5, 6], direcao: [90, 180] });
+  assert.equal(pedidos[0].searchParams.get("hourly"), "wind_speed_10m,wind_direction_10m,temperature_2m");
+  assert.deepEqual(dados.pontos[5], { velocidade: [5, 6], direcao: [90, 180], temperatura: [20.5, 19], elevacao: 50 });
 });
 
-test("grade do vento perto da linha de data e do polo", async () => {
+test("grade do mapa perto da linha de data e do polo", async () => {
   simularFetch((url) => ({ corpo: respostasDaGrade(url) }));
-  const dados = await buscarVentoGrade({ latitude: 84, longitude: 179 });
+  const dados = await buscarGradeMapa({ latitude: 84, longitude: 179 });
   const longitudes = pedidos[0].searchParams.get("longitude").split(",").map(Number);
   assert.ok(longitudes.every((l) => l >= -180 && l < 180));
   assert.ok(longitudes.includes(-179));

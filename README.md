@@ -24,7 +24,7 @@ Tem duas formas de usar: no terminal e num painel web completo.
   </tr>
 </table>
 
-### Mapa com vento e nuvens
+### Mapa com temperatura, vento e nuvens
 
 <table>
   <tr>
@@ -73,7 +73,7 @@ Depois, abra http://127.0.0.1:8000 no navegador.
 O painel web tem: clima atual, previsão por hora com gráfico de temperatura, chuva ou vento, 10 dias (clique em um dia para ver
 detalhes), indicadores (UV, pressão, visibilidade, sol...), qualidade do ar (índice brasileiro IQAr ou europeu EAQI),
 alertas oficiais do INMET e automáticos,
-mapa com vento e nuvens animados, cidades favoritas (com a temperatura de agora em cada uma), °C/°F, modo claro/escuro e localização atual.
+mapa com temperatura (mapa de calor com relevo), vento e nuvens animados, cidades favoritas (com a temperatura de agora em cada uma), °C/°F, modo claro/escuro e localização atual.
 
 > **Instale como aplicativo:** no Chrome/Edge, use o ícone de instalar na barra de endereço (ou
 > **Configurações → Instalar como aplicativo** no painel); no iPhone, **Compartilhar → Adicionar à Tela de Início**.
@@ -86,7 +86,9 @@ mapa com vento e nuvens animados, cidades favoritas (com a temperatura de agora 
 > **Alertas:** para cidades do Brasil, o painel mostra os **alertas oficiais do INMET** (avisos ativos da área da
 > cidade, com severidade, período, riscos e o que fazer). Abaixo deles ficam os alertas **automáticos**, calculados
 > a partir da previsão, que **não são oficiais**.
-> No **mapa**, a camada **Vento** mostra a previsão da Open-Meteo animada (não é medição em tempo real) e a
+> No **mapa**, a camada **Temperatura** mostra a previsão da Open-Meteo das próximas 24 horas como mapa de calor,
+> ajustada à altitude de cada ponto do relevo (AWS Terrain Tiles), para serras e vales aparecerem; a camada
+> **Vento** mostra a previsão da Open-Meteo animada (nenhuma das duas é medição em tempo real) e a
 > camada **Nuvens** mostra imagens reais de satélite do mundo todo (menos perto dos polos): GOES (NOAA, via NASA GIBS)
 > nas Américas e Meteosat MTG (EUMETSAT) na Europa, África e Oriente Médio, a cada 10 minutos; na Ásia e Oceania,
 > o mosaico de satélites geoestacionários da EUMETSAT, a cada 3 horas.
@@ -126,7 +128,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-JavaScript (painel, alertas, consultas às APIs, previsão offline, satélites, vento, formatação, preferências, aplicativo e segurança da página) — usa o executor de testes que já vem no Node.js 22 ou mais novo:
+JavaScript (painel, alertas, consultas às APIs, previsão offline, satélites, vento, mapa de calor, formatação, preferências, aplicativo e segurança da página) — usa o executor de testes que já vem no Node.js 22 ou mais novo:
 
 ```bash
 node --test "tests/js/*.test.mjs"
@@ -154,6 +156,7 @@ A cada push no `main` (e em cada pull request), o GitHub Actions roda os dois so
 | `site/js/descricoes.js` | Traduz o código do tempo para português |
 | `site/js/satelites.js` | Escolhe o satélite das nuvens pela região e deixa só as nuvens visíveis na imagem |
 | `site/js/gradeVento.js` | Converte a grade de vento para o formato da animação e acha o ponto sob o mouse |
+| `site/js/temperaturaMapa.js` | Pinta o mapa de calor da temperatura, corrigida pela altitude do relevo |
 | `site/js/formato.js` / `preferencias.js` | Formatação (temperatura, vento, horas) e preferências/favoritos salvos no navegador |
 | `site/js/componentes/` | Uma parte da tela por arquivo (card atual, por hora, 10 dias, mapa...) |
 | `site/favicon.svg`, `*.png` | Ícones do site e do aplicativo e imagem de prévia ao compartilhar o link (Open Graph) |

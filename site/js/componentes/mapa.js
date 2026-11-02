@@ -1,13 +1,19 @@
-import { buscarHorariosSatelite, buscarVentoGrade, urlTileSatelite } from "../servico.js";
-import { direcao, duracao, esc, hora, horaNaCidade, vento } from "../formato.js";
+import { buscarGradeMapa, buscarHorariosSatelite, urlTileSatelite } from "../servico.js";
+import { direcao, duracao, esc, hora, horaNaCidade, temperatura, vento } from "../formato.js";
 import { indiceNaGrade, quadroVento } from "../gradeVento.js";
 import { iconeUI } from "../icones.js";
 import { deixarSoNuvens, SATELITES, satelitePara } from "../satelites.js";
+import {
+  altitudesDoRelevo, degradeDaEscala, pintarTemperatura, sombreamento, temperaturaNoPonto, temperaturasAoNivelDoMar,
+  ZOOM_MAXIMO_RELEVO,
+} from "../temperaturaMapa.js";
 
 const CAMADAS = [
+  { id: "temperatura", nome: "Temperatura" },
   { id: "nuvens", nome: "Nuvens" },
   { id: "vento", nome: "Vento" },
 ];
+const PREVISOES = ["temperatura", "vento"];
 
 const CORES_VENTO = [
   "rgb(98,182,255)", "rgb(80,215,230)", "rgb(90,230,170)", "rgb(140,240,110)", "rgb(210,245,90)",
@@ -19,6 +25,11 @@ const VALIDADE_SATELITE_MS = 5 * 60 * 1000;
 
 const ZOOM_MAXIMO_NUVENS = 8;
 
+const URL_RELEVO = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium";
+const CREDITO_TEMPERATURA = 'Temperatura: <a href="https://open-meteo.com/">Open-Meteo</a> · '
+  + 'Relevo: <a href="https://registry.opendata.aws/terrain-tiles/">Terrain Tiles</a>';
+const LEGENDA_TEMPERATURA = [-10, 15, 40];
+
 let mapa = null;
 let local = null;
 let fuso = "UTC";
@@ -29,8 +40,13 @@ let indiceQuadro = 0;
 let reproducao = null;
 let ultimoPonto = null;
 
+let gradeCarregada = null;
+
 let camadaVento = null;
-let ventoCarregado = null;
+
+let camadaTemperatura = null;
+let tilesTemperatura = new Map();
+let temperaturasReduzidas = null;
 
 let camadasNuvens = [];
 let nuvensCarregadas = null;
@@ -92,7 +108,8 @@ export function renderizarMapa(el, dados, contexto) {
     radius: 9, color: "#fff", weight: 3, fillColor: "#1769E0", fillOpacity: 1,
   }).addTo(mapa).bindTooltip(esc(nome));
   mapa.createPane("nuvens").style.zIndex = 350;
-  mapa.on("mousemove click", (e) => lerVento(e.latlng));
+  mapa.createPane("temperatura").style.zIndex = 350;
+  mapa.on("mousemove click", (e) => lerPonto(e.latlng));
 }
 
 function selecionarCamada(id) {
@@ -108,6 +125,7 @@ function selecionarCamada(id) {
   desligarCamada();
   marcarChips(id);
   if (id === "vento") ligarVento();
+  else if (id === "temperatura") ligarTemperatura();
   else ligarNuvens();
 }
 
@@ -121,8 +139,9 @@ export function ajustarMapa() {
 }
 
 function notaPadrao() {
-  return `Escolha <strong>Nuvens</strong> para ver as imagens reais de satélite das últimas horas ou
-    <strong>Vento</strong> para ver a previsão das próximas 24 horas em volta de <strong>${esc(local?.nome ?? "")}</strong>.`;
+  return `Escolha <strong>Temperatura</strong> ou <strong>Vento</strong> para ver a previsão das próximas 24 horas em volta
+    de <strong>${esc(local?.nome ?? "")}</strong>, ou <strong>Nuvens</strong> para ver as imagens reais de satélite das
+    últimas horas.`;
 }
 
 function escreverNota(html) {
@@ -149,9 +168,12 @@ function desligarCamada() {
   pedido = null;
   if (mapa) {
     if (camadaVento) mapa.removeLayer(camadaVento);
+    if (camadaTemperatura) mapa.removeLayer(camadaTemperatura);
     camadasNuvens.forEach((camada) => mapa.removeLayer(camada));
   }
   camadaVento = null;
+  camadaTemperatura = null;
+  tilesTemperatura = new Map();
   camadasNuvens = [];
   mostrarControles(null);
 }
@@ -161,13 +183,15 @@ function mostrarControles(id) {
   const legenda = document.querySelector("[data-legenda]");
   if (legenda) {
     legenda.toggleAttribute("hidden", !id);
-    legenda.innerHTML = id === "vento" ? legendaVento() : id === "nuvens" ? legendaNuvens() : "";
+    legenda.innerHTML = { vento: legendaVento, nuvens: legendaNuvens, temperatura: legendaTemperatura }[id]?.() ?? "";
   }
-  document.getElementById("mapa-leaflet")?.classList.toggle("com-camada", Boolean(id));
+  const area = document.getElementById("mapa-leaflet");
+  area?.classList.toggle("com-camada", id === "vento" || id === "nuvens");
+  area?.classList.toggle("com-temperatura", id === "temperatura");
   const selo = document.querySelector("[data-selo]");
   if (selo) {
     selo.toggleAttribute("hidden", !id);
-    selo.textContent = id === "vento" ? "Previsão" : id === "nuvens" ? "Satélite" : "";
+    selo.textContent = PREVISOES.includes(id) ? "Previsão" : id === "nuvens" ? "Satélite" : "";
   }
 }
 
@@ -176,6 +200,14 @@ function legendaVento() {
     <span class="legenda-titulo">Vento previsto</span>
     <span class="legenda-barra" style="background: linear-gradient(90deg, ${CORES_VENTO.join(", ")})"></span>
     <span class="legenda-escala"><span>0</span><span data-legenda-max></span></span>
+    <span class="legenda-leitura" data-leitura>Toque ou aponte no mapa</span>`;
+}
+
+function legendaTemperatura() {
+  return `
+    <span class="legenda-titulo">Temperatura prevista</span>
+    <span class="legenda-barra legenda-temperatura" style="background: ${degradeDaEscala(LEGENDA_TEMPERATURA[0], LEGENDA_TEMPERATURA.at(-1))}"></span>
+    <span class="legenda-escala" data-legenda-temperaturas></span>
     <span class="legenda-leitura" data-leitura>Toque ou aponte no mapa</span>`;
 }
 
@@ -188,19 +220,22 @@ function legendaNuvens() {
 }
 
 function quadros() {
-  if (camadaAtiva === "vento" && camadaVento) return ventoCarregado.dados.horas.length;
+  if ((camadaAtiva === "vento" && camadaVento) || (camadaAtiva === "temperatura" && camadaTemperatura)) {
+    return gradeCarregada.dados.horas.length;
+  }
   if (camadaAtiva === "nuvens" && camadasNuvens.length) return camadasNuvens.length;
   return 0;
 }
 
 function rotuloQuadro(indice) {
-  return camadaAtiva === "vento" ? rotuloVento(ventoCarregado.dados, indice) : rotuloNuvens(indice);
+  return PREVISOES.includes(camadaAtiva) ? rotuloPrevisao(gradeCarregada.dados, indice) : rotuloNuvens(indice);
 }
 
 function mostrarQuadro(indice) {
   if (!quadros()) return;
   indiceQuadro = indice;
-  if (camadaAtiva === "vento") camadaVento.setData(quadroVento(ventoCarregado.dados, indice));
+  if (camadaAtiva === "vento") camadaVento.setData(quadroVento(gradeCarregada.dados, indice));
+  else if (camadaAtiva === "temperatura") pintarTemperaturas();
   else camadasNuvens.forEach((camada, i) => camada.setOpacity(i === indice ? 1 : 0));
   atualizarQuadro();
 }
@@ -213,7 +248,10 @@ function atualizarQuadro() {
   if (controle) {
     controle.max = String(total - 1);
     controle.value = String(indiceQuadro);
-    controle.setAttribute("aria-label", camadaAtiva === "vento" ? "Hora da previsão do vento" : "Horário da imagem de satélite");
+    controle.setAttribute("aria-label", {
+      vento: "Hora da previsão do vento",
+      temperatura: "Hora da previsão da temperatura",
+    }[camadaAtiva] ?? "Horário da imagem de satélite");
     controle.setAttribute("aria-valuetext", rotulo);
   }
   const saida = document.querySelector("[data-quadro-rotulo]");
@@ -224,6 +262,11 @@ function atualizarQuadro() {
     if (maximo) maximo.textContent = `${vento(VENTO_MAXIMO_KMH, ctx.vento)}+`;
     escreverNota(notaVento(rotulo));
     if (ultimoPonto) lerVento(ultimoPonto);
+  } else if (camadaAtiva === "temperatura") {
+    const escala = document.querySelector("[data-legenda-temperaturas]");
+    if (escala) escala.innerHTML = LEGENDA_TEMPERATURA.map((t) => `<span>${temperatura(t, ctx.unidade)}</span>`).join("");
+    escreverNota(notaTemperatura(rotulo));
+    if (ultimoPonto) lerTemperatura(ultimoPonto);
   } else {
     escreverNota(notaNuvens());
   }
@@ -240,7 +283,7 @@ function alternarReproducao() {
 function iniciarReproducao() {
   const total = quadros();
   if (total < 2) return;
-  const intervalo = camadaAtiva === "vento" ? 2000 : 700;
+  const intervalo = { vento: 2000, temperatura: 1000 }[camadaAtiva] ?? 700;
   reproducao = setInterval(() => mostrarQuadro((indiceQuadro + 1) % quadros()), intervalo);
   marcarReproducao(true);
 }
@@ -269,7 +312,7 @@ async function ligarVento() {
 
   escreverNota("<strong>Vento:</strong> carregando a previsão…");
   try {
-    const dados = await dadosVento();
+    const dados = await dadosGrade();
     if (camadaAtiva !== "vento" || mapa !== meuMapa) return;
     indiceQuadro = 0;
     camadaVento = window.L.velocityLayer({
@@ -292,15 +335,15 @@ async function ligarVento() {
   }
 }
 
-async function dadosVento() {
+async function dadosGrade() {
   const chave = `${local.latitude},${local.longitude}`;
-  if (ventoCarregado?.chave === chave && Date.now() - ventoCarregado.quando < VALIDADE_DADOS_MS) {
-    return ventoCarregado.dados;
+  if (gradeCarregada?.chave === chave && Date.now() - gradeCarregada.quando < VALIDADE_DADOS_MS) {
+    return gradeCarregada.dados;
   }
   pedido = new AbortController();
-  const dados = await buscarVentoGrade(local, { signal: pedido.signal });
+  const dados = await buscarGradeMapa(local, { signal: pedido.signal });
   pedido = null;
-  ventoCarregado = { chave, quando: Date.now(), dados };
+  gradeCarregada = { chave, quando: Date.now(), dados };
   return dados;
 }
 
@@ -308,7 +351,7 @@ function isoLocal(dados, indice) {
   return new Date((dados.horas[indice] + dados.deslocamento) * 1000).toISOString();
 }
 
-function rotuloVento(dados, indice) {
+function rotuloPrevisao(dados, indice) {
   const iso = isoLocal(dados, indice);
   const horario = hora(iso, ctx.hora);
   if (indice === 0) return `Agora · ${horario}`;
@@ -321,12 +364,17 @@ function notaVento(rotulo) {
     direção e a força previstas pela Open-Meteo; não é uma medição em tempo real.`;
 }
 
+function lerPonto(latlng) {
+  if (camadaAtiva === "vento") lerVento(latlng);
+  else if (camadaAtiva === "temperatura") lerTemperatura(latlng);
+}
+
 function lerVento(latlng) {
   if (camadaAtiva !== "vento" || !camadaVento) return;
   const leitura = document.querySelector("[data-leitura]");
   if (!leitura) return;
   ultimoPonto = latlng;
-  const { grade, pontos } = ventoCarregado.dados;
+  const { grade, pontos } = gradeCarregada.dados;
   const indice = indiceNaGrade(grade, latlng.lat, latlng.lng);
   if (indice < 0) {
     leitura.textContent = "Fora da área com dados de vento";
@@ -334,6 +382,120 @@ function lerVento(latlng) {
   }
   const ponto = pontos[indice];
   leitura.textContent = `${vento(ponto.velocidade[indiceQuadro], ctx.vento)} vindo do ${direcao(ponto.direcao[indiceQuadro], true)}`;
+}
+
+async function ligarTemperatura() {
+  camadaAtiva = "temperatura";
+  const meuMapa = mapa;
+  if (!meuMapa) {
+    falhar("Temperatura", "não foi possível carregar o mapa (verifique a internet).");
+    return;
+  }
+
+  escreverNota("<strong>Temperatura:</strong> carregando a previsão…");
+  try {
+    const dados = await dadosGrade();
+    if (camadaAtiva !== "temperatura" || mapa !== meuMapa) return;
+    indiceQuadro = 0;
+    temperaturasReduzidas = temperaturasAoNivelDoMar(dados, indiceQuadro);
+    camadaTemperatura = criarCamadaTemperatura().addTo(meuMapa);
+    mostrarControles("temperatura");
+    atualizarQuadro();
+  } catch (erro) {
+    if (erro.name === "AbortError" || camadaAtiva !== "temperatura" || mapa !== meuMapa) return;
+    falhar("Temperatura", erro.message);
+  }
+}
+
+function criarCamadaTemperatura() {
+  const camada = window.L.gridLayer({
+    pane: "temperatura",
+    maxNativeZoom: ZOOM_MAXIMO_RELEVO,
+    maxZoom: 18,
+    className: "camada-temperatura",
+    attribution: CREDITO_TEMPERATURA,
+  });
+  camada.createTile = (coords, pronto) => {
+    const tile = document.createElement("canvas");
+    tile.width = 256;
+    tile.height = 256;
+    const registro = { tile, coords: { x: coords.x, y: coords.y, z: coords.z }, relevo: null };
+    tilesTemperatura.set(tile, registro);
+    const imagem = new Image();
+    imagem.crossOrigin = "anonymous";
+    imagem.onload = () => {
+      registro.relevo = lerRelevo(imagem, registro.coords);
+      pintarTile(registro);
+      pronto(null, tile);
+    };
+    imagem.onerror = () => {
+      pintarTile(registro);
+      pronto(null, tile);
+    };
+    imagem.src = `${URL_RELEVO}/${coords.z}/${coords.x}/${coords.y}.png`;
+    return tile;
+  };
+  camada.on("tileunload", (e) => tilesTemperatura.delete(e.tile));
+  return camada;
+}
+
+function lerRelevo(imagem, coords) {
+  const tela = document.createElement("canvas");
+  tela.width = 256;
+  tela.height = 256;
+  const pincel = tela.getContext("2d", { willReadFrequently: true });
+  pincel.drawImage(imagem, 0, 0);
+  const altitudes = altitudesDoRelevo(pincel.getImageData(0, 0, 256, 256).data);
+  return { altitudes, sombra: sombreamento(altitudes, coords) };
+}
+
+function pintarTile({ tile, coords, relevo }) {
+  const pincel = tile.getContext("2d");
+  const pixels = pincel.createImageData(256, 256);
+  pixels.data.set(pintarTemperatura(relevo, coords, gradeCarregada.dados, temperaturasReduzidas));
+  pincel.putImageData(pixels, 0, 0);
+}
+
+function pintarTemperaturas() {
+  temperaturasReduzidas = temperaturasAoNivelDoMar(gradeCarregada.dados, indiceQuadro);
+  tilesTemperatura.forEach(pintarTile);
+}
+
+function altitudeNoMapa(latlng) {
+  const z = Math.min(Math.round(mapa.getZoom()), ZOOM_MAXIMO_RELEVO);
+  const ponto = mapa.project(latlng, z);
+  const x = Math.floor(ponto.x / 256);
+  const y = Math.floor(ponto.y / 256);
+  const n = 2 ** z;
+  const xNoMundo = ((x % n) + n) % n;
+  for (const { coords, relevo } of tilesTemperatura.values()) {
+    if (relevo && coords.z === z && coords.x === xNoMundo && coords.y === y) {
+      return relevo.altitudes[Math.floor(ponto.y - y * 256) * 256 + Math.floor(ponto.x - x * 256)];
+    }
+  }
+  return null;
+}
+
+function lerTemperatura(latlng) {
+  if (camadaAtiva !== "temperatura" || !camadaTemperatura) return;
+  const leitura = document.querySelector("[data-leitura]");
+  if (!leitura) return;
+  ultimoPonto = latlng;
+  const altitude = altitudeNoMapa(latlng);
+  const valor = temperaturaNoPonto(gradeCarregada.dados, temperaturasReduzidas, latlng.lat, latlng.lng, altitude);
+  if (valor == null) {
+    leitura.textContent = "Fora da área com dados de temperatura";
+    return;
+  }
+  const relevo = altitude == null ? "" : ` · ${Math.round(altitude).toLocaleString("pt-BR")} m de altitude`;
+  leitura.textContent = `${temperatura(valor, ctx.unidade)}${ctx.unidade ?? "C"}${relevo}`;
+}
+
+function notaTemperatura(rotulo) {
+  return `<strong>Temperatura:</strong> previsão do modelo para <strong>${esc(rotulo.toLowerCase())}</strong>, a 2 m do
+    solo, num quadrado de cerca de 650 km de lado em volta de <strong>${esc(local.nome)}</strong>. A previsão da
+    Open-Meteo é ajustada à altitude de cada ponto do relevo (cerca de 0,65 °C a menos a cada 100 m de subida), por isso
+    serras e vales aparecem. Não é uma medição em tempo real.`;
 }
 
 async function ligarNuvens() {

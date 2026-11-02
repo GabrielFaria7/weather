@@ -36,6 +36,7 @@ const ARQUIVOS_DO_SITE = [
   "js/satelites.js",
   "js/seriesPorHora.js",
   "js/servico.js",
+  "js/temperaturaMapa.js",
 ];
 
 const BIBLIOTECAS = [

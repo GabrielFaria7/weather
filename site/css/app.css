@@ -428,6 +428,10 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 :root[data-theme="dark"] .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.85) contrast(.9); }
 .mapa-leaflet.com-camada .leaflet-tile-pane { filter: grayscale(1) brightness(.5) contrast(1.15); }
 :root[data-theme="dark"] .mapa-leaflet.com-camada .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) grayscale(1) brightness(.6) contrast(.95); }
+.mapa-leaflet.com-temperatura .leaflet-tile-pane,
+:root[data-theme="dark"] .mapa-leaflet.com-temperatura .leaflet-tile-pane { filter: grayscale(1) brightness(1.08) contrast(1.15); }
+.mapa-leaflet .leaflet-temperatura-pane { mix-blend-mode: multiply; }
+.mapa-leaflet .camada-temperatura canvas { width: 257px !important; height: 257px !important; }
 .mapa-legenda {
   position: absolute; left: 10px; bottom: 10px; z-index: 1;
   display: flex; flex-direction: column; gap: 4px; width: 200px; padding: 8px 10px;

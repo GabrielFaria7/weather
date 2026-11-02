@@ -43,7 +43,10 @@ test("a CSP libera todos os domínios que o site usa", () => {
     assert.ok(conexoes.includes(dominio), `connect-src sem ${dominio}`);
   }
   const imagens = diretiva("img-src");
-  for (const dominio of ["https://*.tile.openstreetmap.org", "https://gibs.earthdata.nasa.gov", "https://view.eumetsat.int"]) {
+  for (const dominio of [
+    "https://*.tile.openstreetmap.org", "https://gibs.earthdata.nasa.gov", "https://view.eumetsat.int",
+    "https://s3.amazonaws.com/elevation-tiles-prod/",
+  ]) {
     assert.ok(imagens.includes(dominio), `img-src sem ${dominio}`);
   }
   for (const tag of recursosExternos) {

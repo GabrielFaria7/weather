@@ -8,9 +8,9 @@ const URL_PREVISAO = "https://api.open-meteo.com/v1/forecast";
 const URL_QUALIDADE_AR = "https://air-quality-api.open-meteo.com/v1/air-quality";
 const URL_ALERTAS_INMET = "https://apiprevmet3.inmet.gov.br/avisos/ativos";
 const TEMPO_LIMITE_MS = 10000;
-const PASSO_GRADE_VENTO = 0.5;
-const RAIO_GRADE_VENTO = 3;
-const HORAS_VENTO = 24;
+const PASSO_GRADE_MAPA = 0.5;
+const RAIO_GRADE_MAPA = 3;
+const HORAS_GRADE_MAPA = 24;
 const URL_GIBS = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best";
 const MATRIZ_SATELITE = "GoogleMapsCompatible_Level7";
 const URL_EUMETSAT = "https://view.eumetsat.int/geoserver";
@@ -83,26 +83,26 @@ export async function buscarCidades(termo, opcoes) {
 const normalizarLongitude = (longitude) => ((longitude + 540) % 360) - 180;
 const arredondar = (valor) => Number(valor.toFixed(2));
 
-export async function buscarVentoGrade(local, opcoes) {
-  const lado = Math.round((2 * RAIO_GRADE_VENTO) / PASSO_GRADE_VENTO) + 1;
-  const norte = Math.min(85, Math.max(-85 + 2 * RAIO_GRADE_VENTO, local.latitude + RAIO_GRADE_VENTO));
-  const oeste = local.longitude - RAIO_GRADE_VENTO;
-  const grade = { norte, oeste, passo: PASSO_GRADE_VENTO, linhas: lado, colunas: lado };
+export async function buscarGradeMapa(local, opcoes) {
+  const lado = Math.round((2 * RAIO_GRADE_MAPA) / PASSO_GRADE_MAPA) + 1;
+  const norte = Math.min(85, Math.max(-85 + 2 * RAIO_GRADE_MAPA, local.latitude + RAIO_GRADE_MAPA));
+  const oeste = local.longitude - RAIO_GRADE_MAPA;
+  const grade = { norte, oeste, passo: PASSO_GRADE_MAPA, linhas: lado, colunas: lado };
 
   const latitudes = [];
   const longitudes = [];
   for (let linha = 0; linha < lado; linha++) {
     for (let coluna = 0; coluna < lado; coluna++) {
-      latitudes.push(arredondar(norte - linha * PASSO_GRADE_VENTO));
-      longitudes.push(arredondar(normalizarLongitude(oeste + coluna * PASSO_GRADE_VENTO)));
+      latitudes.push(arredondar(norte - linha * PASSO_GRADE_MAPA));
+      longitudes.push(arredondar(normalizarLongitude(oeste + coluna * PASSO_GRADE_MAPA)));
     }
   }
 
   const respostas = await pedirOpenMeteo(URL_PREVISAO, {
     latitude: latitudes.join(","),
     longitude: longitudes.join(","),
-    hourly: "wind_speed_10m,wind_direction_10m",
-    forecast_hours: HORAS_VENTO,
+    hourly: "wind_speed_10m,wind_direction_10m,temperature_2m",
+    forecast_hours: HORAS_GRADE_MAPA,
     timeformat: "unixtime",
     timezone: "auto",
   }, opcoes);
@@ -112,7 +112,12 @@ export async function buscarVentoGrade(local, opcoes) {
     grade,
     horas: lista[0].hourly.time,
     deslocamento: lista[0].utc_offset_seconds ?? 0,
-    pontos: lista.map((r) => ({ velocidade: r.hourly.wind_speed_10m, direcao: r.hourly.wind_direction_10m })),
+    pontos: lista.map((r) => ({
+      velocidade: r.hourly.wind_speed_10m,
+      direcao: r.hourly.wind_direction_10m,
+      temperatura: r.hourly.temperature_2m,
+      elevacao: r.elevation ?? 0,
+    })),
   };
 }
 
