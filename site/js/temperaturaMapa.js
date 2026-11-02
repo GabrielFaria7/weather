@@ -155,3 +155,52 @@ export function pintarTemperatura(relevo, { x, y, z }, dados, reduzidas, lado = 
   }
   return saida;
 }
+
+export function passoParaZoom(zoom) {
+  if (zoom >= 8) return 0.5;
+  if (zoom >= 7) return 1;
+  if (zoom >= 6) return 2;
+  return 4;
+}
+
+const centroDaGrade = (grade) => ({
+  latitude: grade.norte - ((grade.linhas - 1) * grade.passo) / 2,
+  longitude: grade.oeste + ((grade.colunas - 1) * grade.passo) / 2,
+});
+
+const distanciaEmLongitude = (a, b) => Math.abs(((((a - b + 180) % 360) + 360) % 360) - 180);
+
+export function precisaDeNovaGrade(grade, { sul, norte, oeste, leste, zoom }) {
+  if (passoParaZoom(zoom) !== grade.passo) return true;
+  const altura = (grade.linhas - 1) * grade.passo;
+  const largura = (grade.colunas - 1) * grade.passo;
+  const centro = centroDaGrade(grade);
+  const meioLatitude = (sul + norte) / 2;
+  const meioLongitude = (oeste + leste) / 2;
+  const longeDoCentro = Math.abs(meioLatitude - centro.latitude) > altura / 4
+    || distanciaEmLongitude(meioLongitude, centro.longitude) > largura / 4;
+  if (norte - sul >= altura || leste - oeste >= largura) return longeDoCentro;
+  const margem = grade.passo / 2;
+  const limite = largura / 2 - margem;
+  const foraEmLatitude = norte > grade.norte - margem || sul < grade.norte - altura + margem;
+  const foraEmLongitude = distanciaEmLongitude(oeste, centro.longitude) > limite
+    || distanciaEmLongitude(leste, centro.longitude) > limite;
+  return foraEmLatitude || foraEmLongitude;
+}
+
+export function centroParaNovaGrade({ sul, norte, oeste, leste, zoom }) {
+  const passo = passoParaZoom(zoom);
+  const ajustar = (valor) => Math.round(valor / passo) * passo;
+  const longitude = ((((oeste + leste) / 2 + 180) % 360) + 360) % 360 - 180;
+  return { latitude: ajustar((sul + norte) / 2), longitude: ajustar(longitude), passo };
+}
+
+export function indiceDoMesmoHorario(horasAntigas, indiceAntigo, horasNovas) {
+  const instante = horasAntigas?.[indiceAntigo];
+  if (instante == null || !horasNovas?.length) return 0;
+  let melhor = 0;
+  horasNovas.forEach((hora, i) => {
+    if (Math.abs(hora - instante) < Math.abs(horasNovas[melhor] - instante)) melhor = i;
+  });
+  return melhor;
+}

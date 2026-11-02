@@ -18,7 +18,7 @@ Os Termos de Serviço do GitHub permitem que qualquer pessoa veja este repositó
 dentro do próprio GitHub. Isso não dá nenhuma outra permissão além das listadas acima.
 
 As bibliotecas de terceiros carregadas pelo site (Chart.js, Leaflet e leaflet-velocity), as fontes
-e os dados usados (Open-Meteo, INMET, NASA GIBS, EUMETSAT, OpenStreetMap e AWS Terrain Tiles)
+e os dados usados (Open-Meteo, INMET, NASA GIBS, EUMETSAT, OpenStreetMap, AWS Terrain Tiles e GeoNames)
 continuam sob as licenças e os termos dos seus próprios autores.
 
 Pedidos de autorização: https://github.com/GabrielFaria7

@@ -31,7 +31,7 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
 - Não há servidor próprio: o Python é só o app do terminal. `descricoes.py` continua em Python porque o terminal
   usa; a tabela de descrições existe nas duas linguagens.
 - **Lógica pura fora dos componentes:** o que não depende de Leaflet nem do DOM fica em módulos próprios
-  (`painel.js`, `avisos.js`, `atualizacao.js`, `compartilhar.js`, `iqar.js`, `lua.js`, `seriesPorHora.js`, `alertasOficiais.js`, `satelites.js`, `gradeVento.js`, `temperaturaMapa.js`, `resumo.js`, `formato.js`, `preferencias.js`, `servico.js`) e tem
+  (`painel.js`, `avisos.js`, `atualizacao.js`, `compartilhar.js`, `iqar.js`, `lua.js`, `rotulosMapa.js`, `seriesPorHora.js`, `alertasOficiais.js`, `satelites.js`, `gradeVento.js`, `temperaturaMapa.js`, `resumo.js`, `formato.js`, `preferencias.js`, `servico.js`) e tem
   teste em `tests/js/` (`node:test`; `fetch` e `localStorage` são simulados nos testes). Ao criar lógica nova,
   seguir esse padrão e escrever o teste junto.
 - **Sem build no front:** HTML/CSS/JS puros. Chart.js e Leaflet vêm de CDN em `site/index.html`.
@@ -91,9 +91,30 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   foram integradas (RainViewer e grade da Open-Meteo) e removidas a pedido, porque o resultado não agradou; não
   recolocar sem pedido. A primeira versão da Temperatura também foi removida por ficar "opaca e sem cores vivas";
   a atual foi feita a pedido, no estilo do mapa de calor da Meteored. Nunca simular dados no mapa.
-- **Grade do mapa:** `buscarGradeMapa` (`servico.js`) pede à Open-Meteo, pelo navegador, uma grade de
-  13 × 13 pontos (±3°, passo 0,5°) com vento e temperatura das próximas 24 h e a altitude de cada ponto
-  (`elevation`), só quando o usuário liga Temperatura ou Vento. Uma consulta serve às duas camadas (cache de 30 min).
+- **Grade do mapa:** `buscarGradeMapa(centro, { passo })` (`servico.js`) pede à Open-Meteo, pelo navegador, uma grade
+  de 13 × 13 pontos (6 passos para cada lado; passo padrão 0,5°, ou seja ±3°) com vento e temperatura das próximas
+  24 h e a altitude de cada ponto (`elevation`), só quando o usuário liga Temperatura ou Vento. A grade da cidade serve
+  às duas camadas (cache de 30 min); o Vento fica sempre nela.
+- **Temperatura acompanha o mapa:** a camada usa a própria grade (`gradeTemperatura` em `mapa.js`). No `moveend`
+  (esperando 500 ms parado), `precisaDeNovaGrade` (`temperaturaMapa.js`) vê se a vista saiu da grade ou mudou de faixa
+  de zoom (`passoParaZoom`: 0,5° do zoom 8 para cima, 1° no 7, 2° no 6 e 4° abaixo disso; vista maior que a grade só
+  troca se o centro andar mais de 1/4 dela). Antes de consultar, reaproveita a grade da cidade ou uma das últimas 12
+  guardadas (`gradeQueServe`, 30 min); senão busca a grade nova centrada na vista, encaixada no passo
+  (`centroParaNovaGrade`), cancelando a anterior. Ao trocar de grade, `indiceDoMesmoHorario` mantém o horário do
+  controle de tempo. Cada grade nova custa 169 pontos na cota da Open-Meteo, por isso o cache e a espera.
+- **Nomes e temperaturas no mapa (como a Meteored):** com a Temperatura ligada, `mapa.js` mostra até 24 rótulos
+  "Cidade 17°" num painel próprio (`rotulos`, z-index 450, sem receber o mouse). As cidades vêm do GeoNames
+  (`cities15000`, CC BY 4.0, crédito "Cidades: GeoNames" no mapa), convertidas por `ferramentas/gerar_cidades.py` em
+  blocos de 10° × 10° em `site/dados/cidades/` (`indice.json` + `<lat>_<lon>.json`, cada cidade como
+  `[nome, lat, lon, população em mil, altitude]`, das maiores para as menores). `buscarCidadesDaArea` (`servico.js`)
+  lê o índice e só os blocos da vista, guardando na memória (por isso a CSP tem `connect-src 'self'`). Esses arquivos
+  não entram em `ARQUIVOS_DO_SITE` (o service worker guarda só os usados). `escolherRotulos` (`rotulosMapa.js`) põe
+  primeiro as maiores e pula os que encostam em outro rótulo, no marcador da cidade ou nos controles do mapa (zoom,
+  legenda, créditos). O rótulo fica centrado no ponto da cidade, cobrindo o nome que já vem no mapa base (senão o
+  nome aparece duas vezes). A cidade aberta tem rótulo azul acima do marcador, ou abaixo se acima não couber
+  (`grupo`). A temperatura do rótulo usa a altitude do GeoNames. Para atualizar a lista: baixar
+  `https://download.geonames.org/export/dump/cities15000.zip`, extrair e rodar
+  `python3 ferramentas/gerar_cidades.py cities15000.txt` (`tests/test_gerar_cidades.py` testa o conversor).
 - **Vento animado:**
   `quadroVento` (`gradeVento.js`) converte velocidade/direção em u/v e `mapa.js` desenha com `leaflet-velocity@1.9.2` (última versão MIT;
   a 2.x mudou de licença). A interface diz que é previsão do modelo, não medição em tempo real.
@@ -106,7 +127,7 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   próprio (`temperatura`) com `mix-blend-mode: multiply` sobre o mapa base cinza claro (`.com-temperatura`, nos dois
   temas), para os nomes das cidades e estradas aparecerem por cima das cores. Os canvas da camada têm 257 px
   (`.camada-temperatura canvas`): sem isso aparece um fio entre os tiles em telas com escala fracionária. Ao apontar
-  no mapa, a legenda mostra a temperatura e a altitude do ponto. As bordas do quadrado de ~650 km se apagam aos poucos.
+  no mapa, a legenda mostra a temperatura e a altitude do ponto. As bordas da grade se apagam aos poucos.
 - **Nuvens animadas:** imagens reais de satélite, todas grátis, sem chave e com CORS. `SATELITES` e `satelitePara`
   (`satelites.js`) escolhem a fonte pela longitude da cidade: GOES-West e GOES-East GeoColor pela NASA GIBS (WMTS, 12 quadros a cada 10 min,
   ~1 h de atraso); Meteosat MTG infravermelho `mtg_fd:ir105_hrfi` na Europa/África/Oriente Médio (−15° a 60°) e o
@@ -121,7 +142,7 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   nuvens. Acima de 65° de latitude mostra aviso de sem cobertura.
 - **Segurança (`site/index.html`):** os scripts e o CSS de CDN têm `integrity` (SRI, sha384) + `crossorigin`, com
   versão exata na URL; a `<meta http-equiv="Content-Security-Policy">` só libera os domínios usados (scripts:
-  cdnjs e unpkg; conexões: Open-Meteo, INMET, NASA GIBS e EUMETSAT; imagens: tiles do OpenStreetMap, GIBS, EUMETSAT e o relevo em `s3.amazonaws.com/elevation-tiles-prod/`).
+  cdnjs e unpkg; conexões: o próprio site (blocos de cidades), Open-Meteo, INMET, NASA GIBS e EUMETSAT; imagens: tiles do OpenStreetMap, GIBS, EUMETSAT e o relevo em `s3.amazonaws.com/elevation-tiles-prod/`).
   O único script inline (o do tema, no `<head>`) é liberado pelo hash sha256 dele. `tests/js/seguranca.test.mjs`
   confere tudo isso: ao editar o script do tema, o teste falha e mostra o hash novo para pôr na CSP; ao trocar a
   versão de uma biblioteca, recalcular o `integrity` (`curl -sL URL | openssl dgst -sha384 -binary | openssl base64 -A`)

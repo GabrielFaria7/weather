@@ -484,6 +484,14 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 :root[data-theme="dark"] .mapa-leaflet.com-temperatura .leaflet-tile-pane { filter: grayscale(1) brightness(1.08) contrast(1.15); }
 .mapa-leaflet .leaflet-temperatura-pane { mix-blend-mode: multiply; }
 .mapa-leaflet .camada-temperatura canvas { width: 257px !important; height: 257px !important; }
+.mapa-leaflet .leaflet-rotulos-pane { pointer-events: none; }
+.rotulo-cidade {
+  display: flex; align-items: center; justify-content: center; gap: 4px; box-sizing: border-box; white-space: nowrap;
+  border-radius: 999px; background: rgba(255, 255, 255, .92); color: #172033;
+  font-size: 12px; font-weight: 500; line-height: 24px; box-shadow: 0 1px 4px rgba(23, 32, 51, .28);
+}
+.rotulo-cidade strong { font-weight: 700; }
+.rotulo-cidade.rotulo-local { background: #1769E0; color: #fff; }
 .mapa-legenda {
   position: absolute; left: 10px; bottom: 10px; z-index: 1;
   display: flex; flex-direction: column; gap: 4px; width: 200px; padding: 8px 10px;

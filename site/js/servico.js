@@ -2,6 +2,7 @@ import { alertasOficiaisPara, noBrasil } from "./alertasOficiais.js";
 import { descrever } from "./descricoes.js";
 import { montarPainel } from "./painel.js";
 import { previsoesSalvas } from "./preferencias.js";
+import { blocosDaArea, cidadeDoBloco } from "./rotulosMapa.js";
 
 const URL_GEOCODIFICACAO = "https://geocoding-api.open-meteo.com/v1/search";
 const URL_PREVISAO = "https://api.open-meteo.com/v1/forecast";
@@ -10,7 +11,8 @@ const URL_MAR = "https://marine-api.open-meteo.com/v1/marine";
 const URL_ALERTAS_INMET = "https://apiprevmet3.inmet.gov.br/avisos/ativos";
 const TEMPO_LIMITE_MS = 10000;
 const PASSO_GRADE_MAPA = 0.5;
-const RAIO_GRADE_MAPA = 3;
+const PASSOS_POR_LADO = 6;
+const PASTA_CIDADES = "dados/cidades";
 const HORAS_GRADE_MAPA = 24;
 const URL_GIBS = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best";
 const MATRIZ_SATELITE = "GoogleMapsCompatible_Level7";
@@ -93,18 +95,19 @@ export async function buscarCidades(termo, opcoes) {
 const normalizarLongitude = (longitude) => ((longitude + 540) % 360) - 180;
 const arredondar = (valor) => Number(valor.toFixed(2));
 
-export async function buscarGradeMapa(local, opcoes) {
-  const lado = Math.round((2 * RAIO_GRADE_MAPA) / PASSO_GRADE_MAPA) + 1;
-  const norte = Math.min(85, Math.max(-85 + 2 * RAIO_GRADE_MAPA, local.latitude + RAIO_GRADE_MAPA));
-  const oeste = local.longitude - RAIO_GRADE_MAPA;
-  const grade = { norte, oeste, passo: PASSO_GRADE_MAPA, linhas: lado, colunas: lado };
+export async function buscarGradeMapa(local, { passo = PASSO_GRADE_MAPA, ...opcoes } = {}) {
+  const raio = PASSOS_POR_LADO * passo;
+  const lado = 2 * PASSOS_POR_LADO + 1;
+  const norte = Math.min(85, Math.max(-85 + 2 * raio, local.latitude + raio));
+  const oeste = local.longitude - raio;
+  const grade = { norte, oeste, passo, linhas: lado, colunas: lado };
 
   const latitudes = [];
   const longitudes = [];
   for (let linha = 0; linha < lado; linha++) {
     for (let coluna = 0; coluna < lado; coluna++) {
-      latitudes.push(arredondar(norte - linha * PASSO_GRADE_MAPA));
-      longitudes.push(arredondar(normalizarLongitude(oeste + coluna * PASSO_GRADE_MAPA)));
+      latitudes.push(arredondar(norte - linha * passo));
+      longitudes.push(arredondar(normalizarLongitude(oeste + coluna * passo)));
     }
   }
 
@@ -129,6 +132,43 @@ export async function buscarGradeMapa(local, opcoes) {
       elevacao: r.elevation ?? 0,
     })),
   };
+}
+
+let indiceDeCidades = null;
+const blocosDeCidades = new Map();
+
+async function lerJson(endereco, signal) {
+  const resposta = await fetch(endereco, { signal: sinalComLimite(signal) });
+  if (!resposta.ok) throw new Error(`Não foi possível ler ${endereco} (código ${resposta.status}).`);
+  return resposta.json();
+}
+
+export async function buscarCidadesDaArea(area, { signal } = {}) {
+  indiceDeCidades ??= lerJson(`${PASTA_CIDADES}/indice.json`, signal).then((lista) => new Set(lista));
+  let existentes;
+  try {
+    existentes = await indiceDeCidades;
+  } catch (erro) {
+    indiceDeCidades = null;
+    throw erro;
+  }
+  const chaves = blocosDaArea(area).filter((chave) => existentes.has(chave));
+  const listas = await Promise.all(chaves.map((chave) => {
+    if (!blocosDeCidades.has(chave)) {
+      const pedido = lerJson(`${PASTA_CIDADES}/${chave}.json`, signal).then((linhas) => linhas.map(cidadeDoBloco));
+      pedido.catch(() => blocosDeCidades.delete(chave));
+      blocosDeCidades.set(chave, pedido);
+    }
+    return blocosDeCidades.get(chave);
+  }));
+  return listas.flat().filter(({ latitude, longitude }) => latitude >= area.sul && latitude <= area.norte
+    && dentroDaFaixa(longitude, area.oeste, area.leste));
+}
+
+function dentroDaFaixa(longitude, oeste, leste) {
+  if (leste - oeste >= 360) return true;
+  const desde = (valor) => ((((valor - oeste) % 360) + 360) % 360);
+  return desde(longitude) <= leste - oeste;
 }
 
 const isoSatelite = (data) => data.toISOString().replace(/\.\d{3}Z$/, "Z");

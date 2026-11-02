@@ -1,11 +1,12 @@
-import { buscarGradeMapa, buscarHorariosSatelite, urlTileSatelite } from "../servico.js";
+import { buscarCidadesDaArea, buscarGradeMapa, buscarHorariosSatelite, urlTileSatelite } from "../servico.js";
 import { direcao, duracao, esc, hora, horaNaCidade, temperatura, vento } from "../formato.js";
 import { indiceNaGrade, quadroVento } from "../gradeVento.js";
 import { iconeUI } from "../icones.js";
 import { deixarSoNuvens, SATELITES, satelitePara } from "../satelites.js";
+import { escolherRotulos } from "../rotulosMapa.js";
 import {
-  altitudesDoRelevo, degradeDaEscala, pintarTemperatura, sombreamento, temperaturaNoPonto, temperaturasAoNivelDoMar,
-  ZOOM_MAXIMO_RELEVO,
+  altitudesDoRelevo, centroParaNovaGrade, degradeDaEscala, indiceDoMesmoHorario, pintarTemperatura, precisaDeNovaGrade,
+  sombreamento, temperaturaNoPonto, temperaturasAoNivelDoMar, ZOOM_MAXIMO_RELEVO,
 } from "../temperaturaMapa.js";
 
 const CAMADAS = [
@@ -27,8 +28,13 @@ const ZOOM_MAXIMO_NUVENS = 8;
 
 const URL_RELEVO = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium";
 const CREDITO_TEMPERATURA = 'Temperatura: <a href="https://open-meteo.com/">Open-Meteo</a> · '
-  + 'Relevo: <a href="https://registry.opendata.aws/terrain-tiles/">Terrain Tiles</a>';
+  + 'Relevo: <a href="https://registry.opendata.aws/terrain-tiles/">Terrain Tiles</a> · '
+  + 'Cidades: <a href="https://www.geonames.org/">GeoNames</a>';
 const LEGENDA_TEMPERATURA = [-10, 15, 40];
+const ESPERA_PARA_NOVA_AREA_MS = 500;
+const MAXIMO_GRADES_GUARDADAS = 12;
+const MAXIMO_ROTULOS = 24;
+const ALTURA_ROTULO = 24;
 
 let mapa = null;
 let local = null;
@@ -47,6 +53,14 @@ let camadaVento = null;
 let camadaTemperatura = null;
 let tilesTemperatura = new Map();
 let temperaturasReduzidas = null;
+let gradeTemperatura = null;
+const gradesGuardadas = new Map();
+let pedidoArea = null;
+let esperaArea = null;
+let camadaRotulos = null;
+let cidadesDaVista = [];
+let versaoRotulos = 0;
+let medidor = null;
 
 let camadasNuvens = [];
 let nuvensCarregadas = null;
@@ -109,7 +123,9 @@ export function renderizarMapa(el, dados, contexto) {
   }).addTo(mapa).bindTooltip(esc(nome));
   mapa.createPane("nuvens").style.zIndex = 350;
   mapa.createPane("temperatura").style.zIndex = 350;
+  mapa.createPane("rotulos").style.zIndex = 450;
   mapa.on("mousemove click", (e) => lerPonto(e.latlng));
+  mapa.on("moveend", aoMoverMapa);
 }
 
 function selecionarCamada(id) {
@@ -166,13 +182,21 @@ function desligarCamada() {
   pararReproducao();
   pedido?.abort();
   pedido = null;
+  pedidoArea?.abort();
+  pedidoArea = null;
+  clearTimeout(esperaArea);
+  versaoRotulos++;
   if (mapa) {
+    if (camadaRotulos) mapa.removeLayer(camadaRotulos);
     if (camadaVento) mapa.removeLayer(camadaVento);
     if (camadaTemperatura) mapa.removeLayer(camadaTemperatura);
     camadasNuvens.forEach((camada) => mapa.removeLayer(camada));
   }
   camadaVento = null;
   camadaTemperatura = null;
+  camadaRotulos = null;
+  gradeTemperatura = null;
+  cidadesDaVista = [];
   tilesTemperatura = new Map();
   camadasNuvens = [];
   mostrarControles(null);
@@ -220,15 +244,15 @@ function legendaNuvens() {
 }
 
 function quadros() {
-  if ((camadaAtiva === "vento" && camadaVento) || (camadaAtiva === "temperatura" && camadaTemperatura)) {
-    return gradeCarregada.dados.horas.length;
-  }
+  if (camadaAtiva === "vento" && camadaVento) return gradeCarregada.dados.horas.length;
+  if (camadaAtiva === "temperatura" && camadaTemperatura) return gradeTemperatura.horas.length;
   if (camadaAtiva === "nuvens" && camadasNuvens.length) return camadasNuvens.length;
   return 0;
 }
 
 function rotuloQuadro(indice) {
-  return PREVISOES.includes(camadaAtiva) ? rotuloPrevisao(gradeCarregada.dados, indice) : rotuloNuvens(indice);
+  if (camadaAtiva === "temperatura") return rotuloPrevisao(gradeTemperatura, indice);
+  return camadaAtiva === "vento" ? rotuloPrevisao(gradeCarregada.dados, indice) : rotuloNuvens(indice);
 }
 
 function mostrarQuadro(indice) {
@@ -267,6 +291,7 @@ function atualizarQuadro() {
     if (escala) escala.innerHTML = LEGENDA_TEMPERATURA.map((t) => `<span>${temperatura(t, ctx.unidade)}</span>`).join("");
     escreverNota(notaTemperatura(rotulo));
     if (ultimoPonto) lerTemperatura(ultimoPonto);
+    desenharRotulos();
   } else {
     escreverNota(notaNuvens());
   }
@@ -397,10 +422,14 @@ async function ligarTemperatura() {
     const dados = await dadosGrade();
     if (camadaAtiva !== "temperatura" || mapa !== meuMapa) return;
     indiceQuadro = 0;
+    gradeTemperatura = dados;
     temperaturasReduzidas = temperaturasAoNivelDoMar(dados, indiceQuadro);
     camadaTemperatura = criarCamadaTemperatura().addTo(meuMapa);
+    camadaRotulos = window.L.layerGroup([], { pane: "rotulos" }).addTo(meuMapa);
     mostrarControles("temperatura");
     atualizarQuadro();
+    atualizarAreaTemperatura();
+    atualizarRotulos();
   } catch (erro) {
     if (erro.name === "AbortError" || camadaAtiva !== "temperatura" || mapa !== meuMapa) return;
     falhar("Temperatura", erro.message);
@@ -452,13 +481,151 @@ function lerRelevo(imagem, coords) {
 function pintarTile({ tile, coords, relevo }) {
   const pincel = tile.getContext("2d");
   const pixels = pincel.createImageData(256, 256);
-  pixels.data.set(pintarTemperatura(relevo, coords, gradeCarregada.dados, temperaturasReduzidas));
+  pixels.data.set(pintarTemperatura(relevo, coords, gradeTemperatura, temperaturasReduzidas));
   pincel.putImageData(pixels, 0, 0);
 }
 
 function pintarTemperaturas() {
-  temperaturasReduzidas = temperaturasAoNivelDoMar(gradeCarregada.dados, indiceQuadro);
+  temperaturasReduzidas = temperaturasAoNivelDoMar(gradeTemperatura, indiceQuadro);
   tilesTemperatura.forEach(pintarTile);
+}
+
+function vistaDoMapa() {
+  const limites = mapa.getBounds();
+  return {
+    sul: limites.getSouth(), norte: limites.getNorth(), oeste: limites.getWest(), leste: limites.getEast(),
+    zoom: mapa.getZoom(),
+  };
+}
+
+function aoMoverMapa() {
+  if (camadaAtiva !== "temperatura" || !camadaTemperatura) return;
+  atualizarRotulos();
+  clearTimeout(esperaArea);
+  esperaArea = setTimeout(atualizarAreaTemperatura, ESPERA_PARA_NOVA_AREA_MS);
+}
+
+function gradeQueServe(vista) {
+  const validas = [gradeCarregada, ...gradesGuardadas.values()]
+    .filter((guardada) => guardada && Date.now() - guardada.quando < VALIDADE_DADOS_MS);
+  return validas.find((guardada) => !precisaDeNovaGrade(guardada.dados.grade, vista))?.dados ?? null;
+}
+
+function guardarGrade(chave, dados) {
+  gradesGuardadas.delete(chave);
+  gradesGuardadas.set(chave, { quando: Date.now(), dados });
+  if (gradesGuardadas.size > MAXIMO_GRADES_GUARDADAS) gradesGuardadas.delete(gradesGuardadas.keys().next().value);
+}
+
+async function atualizarAreaTemperatura() {
+  if (camadaAtiva !== "temperatura" || !gradeTemperatura || !mapa) return;
+  const vista = vistaDoMapa();
+  if (!precisaDeNovaGrade(gradeTemperatura.grade, vista)) return;
+  const meuMapa = mapa;
+  pedidoArea?.abort();
+  pedidoArea = null;
+  let dados = gradeQueServe(vista);
+  if (!dados) {
+    const centro = centroParaNovaGrade(vista);
+    const controle = new AbortController();
+    pedidoArea = controle;
+    escreverNota("<strong>Temperatura:</strong> carregando a previsão desta área…");
+    try {
+      dados = await buscarGradeMapa(centro, { passo: centro.passo, signal: controle.signal });
+    } catch (erro) {
+      if (controle.signal.aborted || camadaAtiva !== "temperatura" || mapa !== meuMapa) return;
+      pedidoArea = null;
+      escreverNota(`<strong>Temperatura:</strong> não foi possível carregar a previsão desta área agora. ${esc(erro.message)}`);
+      return;
+    }
+    if (controle.signal.aborted) return;
+    pedidoArea = null;
+    guardarGrade(`${centro.passo}:${centro.latitude},${centro.longitude}`, dados);
+  }
+  if (camadaAtiva !== "temperatura" || mapa !== meuMapa || !camadaTemperatura) return;
+  indiceQuadro = indiceDoMesmoHorario(gradeTemperatura.horas, indiceQuadro, dados.horas);
+  gradeTemperatura = dados;
+  pintarTemperaturas();
+  atualizarQuadro();
+}
+
+async function atualizarRotulos() {
+  if (camadaAtiva !== "temperatura" || !camadaRotulos) return;
+  const versao = ++versaoRotulos;
+  let cidades = [];
+  try {
+    cidades = await buscarCidadesDaArea(vistaDoMapa());
+  } catch {
+    cidades = [];
+  }
+  if (versao !== versaoRotulos || camadaAtiva !== "temperatura" || !camadaRotulos) return;
+  cidadesDaVista = cidades;
+  desenharRotulos();
+}
+
+function larguraDoTexto(texto, peso) {
+  medidor ??= document.createElement("canvas").getContext("2d");
+  medidor.font = `${peso} 12px ${getComputedStyle(document.body).fontFamily}`;
+  return medidor.measureText(texto).width;
+}
+
+function montarRotulo(nome, valor, x, y, prioridade, doLocal = false) {
+  const graus = temperatura(valor, ctx.unidade);
+  return {
+    nome, x, y, prioridade, doLocal,
+    largura: Math.ceil(larguraDoTexto(nome, 500) + larguraDoTexto(graus, 700) + 22),
+    altura: ALTURA_ROTULO,
+    html: `<span>${esc(nome)}</span><strong>${graus}</strong>`,
+  };
+}
+
+function controlesSobreOMapa() {
+  const base = mapa.getContainer().getBoundingClientRect();
+  const seletores = "#mapa .leaflet-control-zoom, #mapa .leaflet-control-attribution, #mapa [data-legenda]:not([hidden])";
+  return [...document.querySelectorAll(seletores)].map((elemento) => {
+    const caixa = elemento.getBoundingClientRect();
+    return { x0: caixa.left - base.left, x1: caixa.right - base.left, y0: caixa.top - base.top, y1: caixa.bottom - base.top };
+  });
+}
+
+function desenharRotulos() {
+  if (camadaAtiva !== "temperatura" || !camadaRotulos || !gradeTemperatura || !mapa) return;
+  const tamanho = mapa.getSize();
+  const marcador = mapa.latLngToContainerPoint([local.latitude, local.longitude]);
+  const pertoDoLocal = (cidade) => Math.abs(cidade.latitude - local.latitude) < 0.05
+    && Math.abs(cidade.longitude - local.longitude) < 0.05;
+  const candidatos = [];
+  for (const cidade of cidadesDaVista) {
+    if (pertoDoLocal(cidade)) continue;
+    const valor = temperaturaNoPonto(gradeTemperatura, temperaturasReduzidas, cidade.latitude, cidade.longitude, cidade.altitude);
+    if (valor == null) continue;
+    const ponto = mapa.latLngToContainerPoint([cidade.latitude, cidade.longitude]);
+    candidatos.push(montarRotulo(cidade.nome, valor, ponto.x, ponto.y, cidade.populacao));
+  }
+  const posicaoDoLocal = window.L.latLng(local.latitude, local.longitude);
+  const valorDoLocal = temperaturaNoPonto(gradeTemperatura, temperaturasReduzidas, local.latitude, local.longitude,
+    altitudeNoMapa(posicaoDoLocal));
+  if (valorDoLocal != null) {
+    const acima = montarRotulo(local.nome, valorDoLocal, marcador.x, marcador.y - ALTURA_ROTULO - 6, Infinity, true);
+    const abaixo = { ...acima, y: marcador.y + ALTURA_ROTULO + 6, prioridade: Number.MAX_VALUE };
+    candidatos.push({ ...acima, grupo: "local" }, { ...abaixo, grupo: "local" });
+  }
+  const reservados = [{ x0: marcador.x - 12, x1: marcador.x + 12, y0: marcador.y - 12, y1: marcador.y + 12 }, ...controlesSobreOMapa()];
+  const escolhidos = escolherRotulos(candidatos, { largura: tamanho.x, altura: tamanho.y, maximo: MAXIMO_ROTULOS, reservados });
+  camadaRotulos.clearLayers();
+  for (const rotulo of escolhidos) {
+    window.L.marker(mapa.containerPointToLatLng([rotulo.x, rotulo.y]), {
+      pane: "rotulos",
+      interactive: false,
+      keyboard: false,
+      icon: window.L.divIcon({
+        className: `rotulo-cidade${rotulo.doLocal ? " rotulo-local" : ""}`,
+        html: rotulo.html,
+        iconSize: [rotulo.largura, rotulo.altura],
+        iconAnchor: [rotulo.largura / 2, rotulo.altura / 2],
+      }),
+    }).addTo(camadaRotulos);
+  }
 }
 
 function altitudeNoMapa(latlng) {
@@ -482,7 +649,7 @@ function lerTemperatura(latlng) {
   if (!leitura) return;
   ultimoPonto = latlng;
   const altitude = altitudeNoMapa(latlng);
-  const valor = temperaturaNoPonto(gradeCarregada.dados, temperaturasReduzidas, latlng.lat, latlng.lng, altitude);
+  const valor = temperaturaNoPonto(gradeTemperatura, temperaturasReduzidas, latlng.lat, latlng.lng, altitude);
   if (valor == null) {
     leitura.textContent = "Fora da área com dados de temperatura";
     return;
@@ -493,9 +660,9 @@ function lerTemperatura(latlng) {
 
 function notaTemperatura(rotulo) {
   return `<strong>Temperatura:</strong> previsão do modelo para <strong>${esc(rotulo.toLowerCase())}</strong>, a 2 m do
-    solo, num quadrado de cerca de 650 km de lado em volta de <strong>${esc(local.nome)}</strong>. A previsão da
-    Open-Meteo é ajustada à altitude de cada ponto do relevo (cerca de 0,65 °C a menos a cada 100 m de subida), por isso
-    serras e vales aparecem. Não é uma medição em tempo real.`;
+    solo. A previsão da Open-Meteo é ajustada à altitude de cada ponto do relevo (cerca de 0,65 °C a menos a cada 100 m
+    de subida), por isso serras e vales aparecem. Ao arrastar o mapa para longe, a área nova é carregada. Não é uma
+    medição em tempo real.`;
 }
 
 async function ligarNuvens() {

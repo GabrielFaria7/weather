@@ -39,6 +39,7 @@ const ARQUIVOS_DO_SITE = [
   "js/painel.js",
   "js/preferencias.js",
   "js/resumo.js",
+  "js/rotulosMapa.js",
   "js/satelites.js",
   "js/seriesPorHora.js",
   "js/servico.js",

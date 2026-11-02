@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   altitudeTerrarium, altitudesDoRelevo, corDaTemperatura, degradeDaEscala, ESCALA_TEMPERATURA_MAPA, LAPSO_TERMICO_C_POR_M,
-  pintarTemperatura, sombreamento, temperaturaNoPonto, temperaturasAoNivelDoMar,
+  pintarTemperatura, sombreamento, temperaturaNoPonto, temperaturasAoNivelDoMar, passoParaZoom, precisaDeNovaGrade,
+  centroParaNovaGrade, indiceDoMesmoHorario,
 } from "../../site/js/temperaturaMapa.js";
 
 const quase = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} ≠ ${b}`);
@@ -121,4 +122,41 @@ test("relevo iluminado do noroeste fica mais claro e o oposto mais escuro", () =
   const subindoParaOeste = new Float32Array(lado * lado).map((_, i) => (lado - i % lado) * 300);
   assert.ok(sombreamento(subindoParaLeste, { x: 0, y: 128, z: 8 }, lado).every((v) => v > 1));
   assert.ok(sombreamento(subindoParaOeste, { x: 0, y: 128, z: 8 }, lado).every((v) => v < 1));
+});
+
+test("grade mais espaçada quanto mais longe o zoom", () => {
+  assert.deepEqual([9, 8, 7, 6, 5, 3].map(passoParaZoom), [0.5, 0.5, 1, 2, 4, 4]);
+});
+
+const GRADE_RIO = { norte: -19.9, oeste: -46.2, passo: 0.5, linhas: 13, colunas: 13 };
+
+test("mapa dentro do quadrado da grade não busca outra", () => {
+  assert.equal(precisaDeNovaGrade(GRADE_RIO, { sul: -23.6, norte: -22.2, oeste: -44.3, leste: -42.1, zoom: 9 }), false);
+});
+
+test("arrastar para fora do quadrado ou mudar a faixa de zoom busca outra grade", () => {
+  assert.equal(precisaDeNovaGrade(GRADE_RIO, { sul: -23.6, norte: -22.2, oeste: -41.3, leste: -39.1, zoom: 9 }), true);
+  assert.equal(precisaDeNovaGrade(GRADE_RIO, { sul: -20.2, norte: -18.8, oeste: -44.3, leste: -42.1, zoom: 9 }), true);
+  assert.equal(precisaDeNovaGrade(GRADE_RIO, { sul: -24, norte: -21.8, oeste: -45, leste: -41.4, zoom: 7 }), true);
+});
+
+test("mapa maior que a grade só busca outra se o centro andar bastante", () => {
+  const grande = { norte: 8, oeste: -70, passo: 4, linhas: 13, colunas: 13 };
+  assert.equal(precisaDeNovaGrade(grande, { sul: -60, norte: 20, oeste: -90, leste: 0, zoom: 3 }), false);
+  assert.equal(precisaDeNovaGrade(grande, { sul: -40, norte: 40, oeste: -10, leste: 80, zoom: 3 }), true);
+});
+
+test("centro da grade nova encaixado no espaçamento", () => {
+  assert.deepEqual(centroParaNovaGrade({ sul: -23.6, norte: -22.2, oeste: -41.3, leste: -39.1, zoom: 9 }),
+    { latitude: -23, longitude: -40, passo: 0.5 });
+  assert.deepEqual(centroParaNovaGrade({ sul: -30, norte: -10, oeste: 170, leste: 200, zoom: 5 }),
+    { latitude: -20, longitude: -176, passo: 4 });
+});
+
+test("ao trocar de grade continua no mesmo horário", () => {
+  const antigas = [1000, 4600, 8200, 11800];
+  assert.equal(indiceDoMesmoHorario(antigas, 2, [4600, 8200, 11800, 15400]), 1);
+  assert.equal(indiceDoMesmoHorario(antigas, 0, [4600, 8200]), 0);
+  assert.equal(indiceDoMesmoHorario(antigas, 3, [8300, 11900]), 1);
+  assert.equal(indiceDoMesmoHorario(undefined, 0, [1, 2]), 0);
 });

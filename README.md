@@ -97,7 +97,8 @@ Com o painel aberto, a previsão se atualiza sozinha a cada 15 minutos (o card p
 > cidade, com severidade, período, riscos e o que fazer). Abaixo deles ficam os alertas **automáticos**, calculados
 > a partir da previsão, que **não são oficiais**.
 > No **mapa**, a camada **Temperatura** mostra a previsão da Open-Meteo das próximas 24 horas como mapa de calor,
-> ajustada à altitude de cada ponto do relevo (AWS Terrain Tiles), para serras e vales aparecerem; a camada
+> ajustada à altitude de cada ponto do relevo (AWS Terrain Tiles), para serras e vales aparecerem, com os nomes e as
+> temperaturas das cidades (lista do GeoNames); ao arrastar o mapa para longe, a área nova é carregada. A camada
 > **Vento** mostra a previsão da Open-Meteo animada (nenhuma das duas é medição em tempo real) e a
 > camada **Nuvens** mostra imagens reais de satélite do mundo todo (menos perto dos polos): GOES (NOAA, via NASA GIBS)
 > nas Américas e Meteosat MTG (EUMETSAT) na Europa, África e Oriente Médio, a cada 10 minutos; na Ásia e Oceania,
@@ -168,6 +169,8 @@ A cada push no `main` (e em cada pull request), o GitHub Actions roda os dois so
 | `site/js/gradeVento.js` | Converte a grade de vento para o formato da animação e acha o ponto sob o mouse |
 | `site/js/temperaturaMapa.js` | Pinta o mapa de calor da temperatura, corrigida pela altitude do relevo |
 | `site/js/resumo.js` | Escreve o resumo das próximas horas e a comparação com ontem |
+| `site/js/rotulosMapa.js` | Escolhe quais nomes de cidades cabem no mapa de calor sem se sobrepor |
+| `site/dados/cidades/` | Cidades do GeoNames em blocos de 10° (geradas por `ferramentas/gerar_cidades.py`) |
 | `site/js/lua.js` | Calcula a fase da lua, o nascer e o pôr e as próximas lua cheia e nova |
 | `site/js/compartilhar.js` | Monta o texto e o link para compartilhar (sem expor a localização exata do GPS) |
 | `site/js/atualizacao.js` | Decide quando atualizar a previsão sozinho e escreve "Atualizado há X min" |
@@ -177,6 +180,7 @@ A cada push no `main` (e em cada pull request), o GitHub Actions roda os dois so
 | `site/manifest.webmanifest` | Dados do aplicativo instalável (nome, cores, ícones) |
 | `site/sw.js` | Service worker: guarda os arquivos do site para ele abrir sem internet |
 | `ferramentas/og-image.html` | Modelo da imagem de prévia (abrir em 1200 × 630 e tirar o print) |
+| `ferramentas/gerar_cidades.py` | Converte a lista de cidades do GeoNames nos blocos de `site/dados/cidades/` |
 | `tests/` | Testes em Python (`pytest`) e em JavaScript (`tests/js/`, `node --test`) |
 
 ## Licença
