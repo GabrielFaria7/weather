@@ -26,6 +26,10 @@ Tem duas formas de usar: no terminal e num painel web completo.
 
 ### Mapa com temperatura, vento e nuvens
 
+**Temperatura (modo claro)**
+
+![Mapa do Rio de Janeiro no modo claro com o mapa de calor da temperatura prevista: a Baixada em laranja e as serras em amarelo e verde, mais frias pela altitude](docs/mapa-temperatura.png)
+
 <table>
   <tr>
     <td width="50%"><strong>Vento (modo escuro)</strong><br><img src="docs/mapa-vento.png" alt="Mapa do Rio de Janeiro no modo escuro com partículas coloridas mostrando a previsão do vento"></td>
