@@ -31,7 +31,7 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
 - Não há servidor próprio: o Python é só o app do terminal. `descricoes.py` continua em Python porque o terminal
   usa; a tabela de descrições existe nas duas linguagens.
 - **Lógica pura fora dos componentes:** o que não depende de Leaflet nem do DOM fica em módulos próprios
-  (`painel.js`, `avisos.js`, `iqar.js`, `seriesPorHora.js`, `alertasOficiais.js`, `satelites.js`, `gradeVento.js`, `temperaturaMapa.js`, `formato.js`, `preferencias.js`, `servico.js`) e tem
+  (`painel.js`, `avisos.js`, `atualizacao.js`, `iqar.js`, `seriesPorHora.js`, `alertasOficiais.js`, `satelites.js`, `gradeVento.js`, `temperaturaMapa.js`, `formato.js`, `preferencias.js`, `servico.js`) e tem
   teste em `tests/js/` (`node:test`; `fetch` e `localStorage` são simulados nos testes). Ao criar lógica nova,
   seguir esse padrão e escrever o teste junto.
 - **Sem build no front:** HTML/CSS/JS puros. Chart.js e Leaflet vêm de CDN em `site/index.html`.
@@ -133,6 +133,13 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   satélites e tiles do mapa passam direto (não são guardados). **Ao criar ou remover arquivo em `site/`, ou trocar a
   versão de uma biblioteca de CDN, atualizar as listas do `sw.js`** (`tests/js/aplicativo.test.mjs` falha se faltar).
   `VERSAO` só precisa mudar se a forma de guardar mudar.
+- **Atualização automática:** com o painel aberto e a aba visível, `main.js` busca a previsão de novo a cada 15 min
+  (`deveAtualizar` e `INTERVALO_ATUALIZACAO_MS` em `atualizacao.js`; confere a cada 30 s e no `visibilitychange`, então
+  quem volta ao app depois de horas recebe dados novos na hora). Não atualiza sem internet nem com a janela de um dia
+  (`#modal-dia`) aberta. A atualização é silenciosa: usa `renderizarConteudo` (não recria o mapa, então a camada ligada
+  continua) e guarda a rolagem da lista de horas. Se a busca cair na previsão salva (`salvaEm`), mantém o que está na
+  tela. O card principal mostra "Atualizado há X min" (`textoAtualizacao`), que também é um botão para atualizar na
+  hora; se falhar pelo botão, aparece um aviso.
 - **Previsão offline:** `buscarPrevisao` (`servico.js`) guarda cada previsão que deu certo em `previsoesSalvas`
   (`preferencias.js`, localStorage, até 5 cidades). Se a consulta falhar (sem internet, limite 429 etc.) e houver
   previsão salva da cidade com menos de 7 dias, devolve o painel com `salvaEm`; `main.js` mostra o aviso
@@ -163,6 +170,13 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   merge. As bibliotecas de CDN em `site/index.html` (Chart.js, Leaflet, leaflet-velocity) o Dependabot não vê:
   atualizar à mão, recalculando o `integrity` (ver Segurança). leaflet-velocity fica na 1.9.2 (a 2.x mudou de licença).
 - O Render (https://weather-jdpm.onrender.com/) foi desligado; `web.py` e `render.yaml` foram removidos.
+
+## Licença
+
+- **Todos os direitos reservados** (`LICENSE`, desde 02/11/2026; antes era MIT). Pode ver o código e usar o site, mas
+  copiar, modificar, publicar ou reutilizar exige autorização por escrito do autor. O rodapé do site mostra
+  "© 2026 Gabriel Faria · Todos os direitos reservados". O repositório continua público porque, no plano gratuito do
+  GitHub, deixar privado tira o site do Pages do ar.
 
 ## Como trabalhar neste projeto
 

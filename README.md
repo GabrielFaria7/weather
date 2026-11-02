@@ -78,6 +78,7 @@ O painel web tem: clima atual, previsão por hora com gráfico de temperatura, c
 detalhes), indicadores (UV, pressão, visibilidade, sol...), qualidade do ar (índice brasileiro IQAr ou europeu EAQI),
 alertas oficiais do INMET e automáticos,
 mapa com temperatura (mapa de calor com relevo), vento e nuvens animados, cidades favoritas (com a temperatura de agora em cada uma), °C/°F, modo claro/escuro e localização atual.
+Com o painel aberto, a previsão se atualiza sozinha a cada 15 minutos (o card principal mostra "Atualizado há X min"; toque nele para atualizar na hora).
 
 > **Instale como aplicativo:** no Chrome/Edge, use o ícone de instalar na barra de endereço (ou
 > **Configurações → Instalar como aplicativo** no painel); no iPhone, **Compartilhar → Adicionar à Tela de Início**.
@@ -132,7 +133,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-JavaScript (painel, alertas, consultas às APIs, previsão offline, satélites, vento, mapa de calor, formatação, preferências, aplicativo e segurança da página) — usa o executor de testes que já vem no Node.js 22 ou mais novo:
+JavaScript (painel, alertas, atualização automática, consultas às APIs, previsão offline, satélites, vento, mapa de calor, formatação, preferências, aplicativo e segurança da página) — usa o executor de testes que já vem no Node.js 22 ou mais novo:
 
 ```bash
 node --test "tests/js/*.test.mjs"
@@ -161,6 +162,7 @@ A cada push no `main` (e em cada pull request), o GitHub Actions roda os dois so
 | `site/js/satelites.js` | Escolhe o satélite das nuvens pela região e deixa só as nuvens visíveis na imagem |
 | `site/js/gradeVento.js` | Converte a grade de vento para o formato da animação e acha o ponto sob o mouse |
 | `site/js/temperaturaMapa.js` | Pinta o mapa de calor da temperatura, corrigida pela altitude do relevo |
+| `site/js/atualizacao.js` | Decide quando atualizar a previsão sozinho e escreve "Atualizado há X min" |
 | `site/js/formato.js` / `preferencias.js` | Formatação (temperatura, vento, horas) e preferências/favoritos salvos no navegador |
 | `site/js/componentes/` | Uma parte da tela por arquivo (card atual, por hora, 10 dias, mapa...) |
 | `site/favicon.svg`, `*.png` | Ícones do site e do aplicativo e imagem de prévia ao compartilhar o link (Open Graph) |
@@ -171,4 +173,6 @@ A cada push no `main` (e em cada pull request), o GitHub Actions roda os dois so
 
 ## Licença
 
-Distribuído sob a licença MIT. Veja o arquivo [LICENSE](LICENSE).
+© 2026 Gabriel Faria. **Todos os direitos reservados.** Você pode ver o código e usar o site, mas não pode
+copiar, modificar, publicar ou reutilizar o Weather sem autorização por escrito do autor. Veja o arquivo
+[LICENSE](LICENSE).

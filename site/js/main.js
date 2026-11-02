@@ -1,3 +1,4 @@
+import { deveAtualizar, textoAtualizacao } from "./atualizacao.js";
 import { buscarPrevisao } from "./servico.js";
 import { agoraNaCidade, dataHoraLocal, esc } from "./formato.js";
 import { iconeUI, preencherIcones } from "./icones.js";
@@ -22,6 +23,10 @@ const estado = {
   vento: preferencias.vento,
   hora: preferencias.hora,
   indiceAr: preferencias.indiceAr,
+  carregando: false,
+  atualizando: false,
+  atualizadoEm: null,
+  ultimaTentativa: 0,
 };
 
 let numeroDoPedido = 0;
@@ -30,21 +35,82 @@ let observadorAbas;
 async function carregar(local) {
   const meuPedido = ++numeroDoPedido;
   estado.local = local;
+  estado.carregando = true;
   renderizarCarregando(principal);
   window.scrollTo({ top: 0 });
 
   try {
     const dados = await buscarPrevisao(local);
     if (meuPedido !== numeroDoPedido) return;
+    estado.carregando = false;
     estado.dados = dados;
+    estado.atualizadoEm = dados.salvaEm ?? Date.now();
+    estado.ultimaTentativa = Date.now();
     preferencias.ultimoLocal = local;
     atualizarEndereco(local);
     document.title = `${dados.local.nome} · Weather`;
     montarPainel();
   } catch (erro) {
     if (meuPedido !== numeroDoPedido) return;
+    estado.carregando = false;
     renderizarErro(principal, erro.message, () => carregar(local));
   }
+}
+
+function verificarAtualizacao() {
+  if (!estado.dados || estado.carregando) return;
+  const pode = deveAtualizar({
+    ultimaVez: Math.max(estado.atualizadoEm ?? 0, estado.ultimaTentativa),
+    visivel: document.visibilityState === "visible",
+    online: navigator.onLine,
+    ocupado: Boolean(document.getElementById("modal-dia")?.open),
+  });
+  if (pode) atualizarEmSegundoPlano();
+}
+
+async function atualizarEmSegundoPlano({ manual = false } = {}) {
+  if (!estado.dados || estado.carregando || estado.atualizando) return;
+  const meuPedido = numeroDoPedido;
+  estado.atualizando = true;
+  estado.ultimaTentativa = Date.now();
+  marcarAtualizacao();
+  let atualizou = false;
+  try {
+    const dados = await buscarPrevisao(estado.local);
+    if (meuPedido !== numeroDoPedido || estado.carregando) return;
+    if (!dados.salvaEm) {
+      const estavaSalva = Boolean(estado.dados.salvaEm);
+      estado.dados = dados;
+      estado.atualizadoEm = Date.now();
+      atualizou = true;
+      if (estavaSalva) montarPainel();
+      else redesenharMantendoRolagem();
+    }
+  } catch {
+    atualizou = false;
+  } finally {
+    estado.atualizando = false;
+    marcarAtualizacao();
+    if (manual && !atualizou && meuPedido === numeroDoPedido) {
+      mostrarAviso("Não foi possível atualizar agora. Tente de novo em instantes.");
+    }
+  }
+}
+
+function marcarAtualizacao() {
+  const botao = principal.querySelector('[data-acao="atualizar"]');
+  if (!botao) return;
+  botao.classList.toggle("atualizando", estado.atualizando);
+  botao.querySelector("[data-atualizado]").textContent = estado.atualizando
+    ? "Atualizando…"
+    : textoAtualizacao(estado.atualizadoEm);
+}
+
+function redesenharMantendoRolagem() {
+  const rolagem = principal.querySelector(".horas-trilho")?.scrollLeft ?? 0;
+  renderizarConteudo();
+  const trilho = principal.querySelector(".horas-trilho");
+  if (trilho) trilho.scrollLeft = rolagem;
 }
 
 function atualizarEndereco(local) {
@@ -103,6 +169,7 @@ function contexto() {
     hora: estado.hora,
     indiceAr: estado.indiceAr,
     favorito: favoritos.contem(estado.dados.local),
+    atualizadoEm: estado.atualizadoEm,
   };
 }
 
@@ -131,6 +198,7 @@ function renderizarListaFavoritos() {
 
 function mostrarInicio() {
   numeroDoPedido++;
+  estado.carregando = false;
   estado.dados = null;
   history.replaceState(null, "", location.pathname);
   document.title = "Weather";
@@ -269,6 +337,7 @@ function iniciar() {
 
   principal.addEventListener("click", (e) => {
     if (e.target.closest('[data-acao="favorito"]')) alternarFavorito();
+    if (e.target.closest('[data-acao="atualizar"]')) atualizarEmSegundoPlano({ manual: true });
   });
 
   document.querySelector(".logo").addEventListener("click", (e) => { e.preventDefault(); mostrarInicio(); });
@@ -276,7 +345,10 @@ function iniciar() {
   setInterval(() => {
     const relogio = document.querySelector("[data-relogio]");
     if (relogio && estado.dados) relogio.textContent = agoraNaCidade(estado.dados.fuso, estado.hora);
+    if (!estado.atualizando) marcarAtualizacao();
+    verificarAtualizacao();
   }, 30000);
+  document.addEventListener("visibilitychange", verificarAtualizacao);
 
   window.addEventListener("resize", ajustarMapa);
 

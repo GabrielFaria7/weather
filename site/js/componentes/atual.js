@@ -1,3 +1,4 @@
+import { textoAtualizacao } from "../atualizacao.js";
 import { agoraNaCidade, direcao, esc, nomeCompleto, porcentagem, temperatura, vento } from "../formato.js";
 import { classeFundo, iconeClima, iconeUI } from "../icones.js";
 
@@ -13,6 +14,9 @@ export function renderizarAtual(el, dados, ctx) {
           <h1 class="atual-local" id="atual-local">${esc(local.nome)}</h1>
           <p class="atual-regiao">${esc(nomeCompleto(local))}</p>
           <p class="atual-relogio">${iconeUI("relogio")}<span data-relogio>${esc(agoraNaCidade(fuso, ctx.hora))}</span></p>
+          <button class="atual-atualizado" type="button" data-acao="atualizar" title="Atualizar a previsão agora">
+            ${iconeUI("recarregar")}<span data-atualizado>${esc(textoAtualizacao(ctx.atualizadoEm))}</span>
+          </button>
         </div>
         <button class="btn-favorito" type="button" data-acao="favorito" aria-pressed="${ctx.favorito}"
                 aria-label="${ctx.favorito ? "Remover dos favoritos" : "Salvar nos favoritos"}"
