@@ -1,4 +1,5 @@
 import { alertasOficiaisPara, noBrasil } from "./alertasOficiais.js";
+import { descrever } from "./descricoes.js";
 import { montarPainel } from "./painel.js";
 import { previsoesSalvas } from "./preferencias.js";
 
@@ -16,6 +17,7 @@ const URL_EUMETSAT = "https://view.eumetsat.int/geoserver";
 const LIMITE_MERCATOR = 20037508.342789244;
 const JANELA_SATELITE_MS = 4 * 60 * 60 * 1000;
 const VALIDADE_PREVISAO_SALVA_MS = 7 * 24 * 60 * 60 * 1000;
+const VALIDADE_CLIMA_ATUAL_MS = 10 * 60 * 1000;
 
 const POLUENTES = "pm10,pm2_5,ozone,nitrogen_dioxide,sulphur_dioxide,carbon_monoxide";
 const PARAMETROS_QUALIDADE_AR = {
@@ -171,6 +173,48 @@ export function urlTileSatelite({ fonte, camada }, horario) {
     });
     return `${URL_EUMETSAT}/wms?${parametros}`;
   };
+}
+
+const climaAtualGuardado = new Map();
+const chaveDoLocal = ({ latitude, longitude }) => `${Number(latitude).toFixed(2)},${Number(longitude).toFixed(2)}`;
+
+export async function buscarClimaAtual(locais, { signal, agora = Date.now() } = {}) {
+  const faltandoPorChave = new Map();
+  for (const l of locais) {
+    const chave = chaveDoLocal(l);
+    const guardado = climaAtualGuardado.get(chave);
+    const valido = guardado && agora - guardado.quando < VALIDADE_CLIMA_ATUAL_MS;
+    if (!valido && !faltandoPorChave.has(chave)) faltandoPorChave.set(chave, l);
+  }
+  const faltando = [...faltandoPorChave.values()];
+
+  if (faltando.length) {
+    try {
+      const resposta = await pedirOpenMeteo(URL_PREVISAO, {
+        latitude: faltando.map((l) => l.latitude).join(","),
+        longitude: faltando.map((l) => l.longitude).join(","),
+        current: "temperature_2m,weather_code,is_day",
+        timezone: "auto",
+      }, { signal });
+      const lista = Array.isArray(resposta) ? resposta : [resposta];
+      faltando.forEach((local, i) => {
+        const atual = lista[i]?.current;
+        if (!atual) return;
+        climaAtualGuardado.set(chaveDoLocal(local), {
+          quando: agora,
+          dados: {
+            temperatura: atual.temperature_2m ?? null,
+            codigo: atual.weather_code ?? null,
+            descricao: descrever(atual.weather_code),
+            dia: Boolean(atual.is_day),
+          },
+        });
+      });
+    } catch (erro) {
+      if (erro.name === "AbortError") throw erro;
+    }
+  }
+  return locais.map((l) => climaAtualGuardado.get(chaveDoLocal(l))?.dados ?? null);
 }
 
 export async function buscarAlertasOficiais(local, { signal } = {}) {

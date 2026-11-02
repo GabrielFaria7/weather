@@ -73,7 +73,7 @@ Depois, abra http://127.0.0.1:8000 no navegador.
 O painel web tem: clima atual, previsão por hora com gráfico de temperatura, chuva ou vento, 10 dias (clique em um dia para ver
 detalhes), indicadores (UV, pressão, visibilidade, sol...), qualidade do ar (índice brasileiro IQAr ou europeu EAQI),
 alertas oficiais do INMET e automáticos,
-mapa com vento e nuvens animados, cidades favoritas, °C/°F, modo claro/escuro e localização atual.
+mapa com vento e nuvens animados, cidades favoritas (com a temperatura de agora em cada uma), °C/°F, modo claro/escuro e localização atual.
 
 > **Instale como aplicativo:** no Chrome/Edge, use o ícone de instalar na barra de endereço (ou
 > **Configurações → Instalar como aplicativo** no painel); no iPhone, **Compartilhar → Adicionar à Tela de Início**.

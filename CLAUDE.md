@@ -73,6 +73,12 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   garoa não parecer temporal) + linha tracejada da chance. Vento: velocidade + rajadas tracejadas, seta da direção na
   lista. Dados por hora pedidos na previsão: `precipitation`, `wind_gusts_10m`, `wind_direction_10m`; previsões
   salvas antes disso mostram "—".
+- **Favoritos com o tempo de agora:** `buscarClimaAtual` (`servico.js`) busca temperatura, código do tempo e dia/noite
+  de várias cidades numa consulta só à Open-Meteo (coordenadas separadas por vírgula; com uma cidade a API devolve
+  objeto, não lista) e guarda cada cidade por 10 minutos (chave: coordenadas com 2 casas), buscando só as que
+  faltam. A cidade aberta no painel usa `estado.dados.atual` (mesmo número do card principal). `favoritos.js` desenha
+  a lista na hora, com `.favorito-clima.carregando`, e preenche quando a resposta chega (ignora respostas de
+  desenhos antigos). Se a consulta falhar, o espaço fica vazio, sem erro.
 - **O mapa tem só as camadas Nuvens e Vento**, ambas com dados reais. Radar de chuva, Temperatura e Precipitação
   já foram integradas (RainViewer e grade da Open-Meteo) e removidas a pedido, porque o resultado não agradou.
   Não recolocar sem pedido. Nunca simular dados no mapa.

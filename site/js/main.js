@@ -124,6 +124,8 @@ function renderizarListaFavoritos() {
   renderizarFavoritos(area("favoritos"), estado.dados?.local, {
     aoEscolher: carregar,
     aoMudar: renderizarConteudo,
+    unidade: estado.unidade,
+    climaDoLocalAtual: estado.dados?.atual ?? null,
   });
 }
 

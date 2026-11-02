@@ -1,9 +1,20 @@
-import { esc } from "../formato.js";
-import { iconeUI } from "../icones.js";
+import { esc, temperatura } from "../formato.js";
+import { iconeClima, iconeUI } from "../icones.js";
 import { favoritos, mesmoLocal } from "../preferencias.js";
+import { buscarClimaAtual } from "../servico.js";
 
-export function renderizarFavoritos(el, localAtual, { aoEscolher, aoMudar }) {
+let ultimaRenderizacao = 0;
+
+function climaHtml(clima, unidade) {
+  if (!clima) return "";
+  return `${iconeClima(clima.codigo, clima.dia, { tamanho: 28, rotulo: clima.descricao })}
+    <span class="favorito-temp">${temperatura(clima.temperatura, unidade)}</span>`;
+}
+
+export function renderizarFavoritos(el, localAtual, { aoEscolher, aoMudar, unidade = "C", climaDoLocalAtual = null }) {
   const lista = favoritos.listar();
+  const esteDesenho = ++ultimaRenderizacao;
+  const ehAtual = (f) => Boolean(localAtual && mesmoLocal(f, localAtual));
 
   el.innerHTML = `
     <section class="card" aria-labelledby="titulo-favoritos">
@@ -11,9 +22,10 @@ export function renderizarFavoritos(el, localAtual, { aoEscolher, aoMudar }) {
       ${lista.length
         ? `<ul class="favoritos-lista">
             ${lista.map((f, i) => `
-              <li class="favorito ${localAtual && mesmoLocal(f, localAtual) ? "ativo" : ""}">
+              <li class="favorito ${ehAtual(f) ? "ativo" : ""}">
                 <button type="button" class="favorito-abrir" data-abrir="${i}">
-                  ${iconeUI("pino")}<span><strong>${esc(f.nome)}</strong><small>${esc([f.estado, f.pais].filter(Boolean).join(", "))}</small></span>
+                  ${iconeUI("pino")}<span class="favorito-nome"><strong>${esc(f.nome)}</strong><small>${esc([f.estado, f.pais].filter(Boolean).join(", "))}</small></span>
+                  <span class="favorito-clima ${ehAtual(f) && climaDoLocalAtual ? "" : "carregando"}" data-clima="${i}">${ehAtual(f) ? climaHtml(climaDoLocalAtual, unidade) : ""}</span>
                 </button>
                 <button type="button" class="favorito-remover" data-remover="${i}" aria-label="Remover ${esc(f.nome)} dos favoritos">
                   ${iconeUI("fechar")}
@@ -28,4 +40,16 @@ export function renderizarFavoritos(el, localAtual, { aoEscolher, aoMudar }) {
     favoritos.remover(lista[b.dataset.remover]);
     aoMudar();
   }));
+
+  const pendentes = lista.map((f, i) => [f, i]).filter(([f]) => !(ehAtual(f) && climaDoLocalAtual));
+  if (!pendentes.length) return;
+  buscarClimaAtual(pendentes.map(([f]) => f)).then((climas) => {
+    if (esteDesenho !== ultimaRenderizacao) return;
+    climas.forEach((clima, j) => {
+      const alvo = el.querySelector(`[data-clima="${pendentes[j][1]}"]`);
+      if (!alvo) return;
+      alvo.innerHTML = climaHtml(clima, unidade);
+      alvo.classList.remove("carregando");
+    });
+  }).catch(() => {});
 }
