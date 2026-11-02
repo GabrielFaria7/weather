@@ -11,11 +11,11 @@ Tem duas formas de usar: no terminal e num painel web completo.
 
 **Painel web (modo claro)**
 
-![Painel web no modo claro mostrando o clima atual de São Paulo e a previsão por hora](docs/painel-claro.png)
+![Painel web no modo claro com o clima atual de São Paulo, alertas oficiais do INMET, cidades favoritas com a temperatura de agora e a previsão por hora](docs/painel-claro.png)
 
 **Painel completo (modo escuro)**
 
-![Painel web no modo escuro com clima atual, previsão por hora, 10 dias, indicadores, qualidade do ar e mapa](docs/painel-escuro.png)
+![Painel web no modo escuro com clima atual do Rio de Janeiro, alertas oficiais do INMET, favoritos, previsão por hora, 10 dias, indicadores, qualidade do ar (IQAr) e mapa](docs/painel-escuro.png)
 
 <table>
   <tr>
