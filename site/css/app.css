@@ -262,7 +262,7 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 .area-indicadores { grid-column: span 5; }
 .area-ar { grid-column: span 4; }
 .area-mapa { grid-column: span 8; }
-.area-lateral > *, .area-ar > *, .area-mapa > * { height: 100%; }
+.area-lateral > *, .area-ar > *, .area-mapa > *, .area-dias > * { height: 100%; }
 
 .card {
   background: var(--superficie);
@@ -361,7 +361,7 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 
 .horas-trilho {
   overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x proximity;
-  margin: 0 -20px; padding: 0 20px 6px;
+  margin: 0 -20px; padding: 0 20px 6px; scroll-padding-inline: 20px;
   scrollbar-width: thin; scrollbar-color: var(--borda) transparent;
 }
 .horas-conteudo { --coluna: 76px; width: calc(var(--colunas) * var(--coluna)); }
@@ -714,7 +714,7 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
   .atual-metricas > div { padding: 10px; }
   .atual-metricas dd { font-size: 15px; }
 
-  .horas-trilho { margin: 0 -16px; padding: 0 16px 6px; }
+  .horas-trilho { margin: 0 -16px; padding: 0 16px 6px; scroll-padding-inline: 16px; }
   .horas-variaveis { order: 3; flex-basis: 100%; margin-left: 0; display: flex; }
   .horas-variaveis button { flex: 1; }
 

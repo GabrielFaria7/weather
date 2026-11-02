@@ -133,6 +133,10 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   dentro do card (`.alertas-corpo`) e ganham esmaecido embaixo (`.tem-mais`, marcado em `alertas.js`) quando há mais
   conteúdo. Sem isso, muitos alertas esticavam o card principal e deixavam um buraco vazio enorme. Abaixo de
   1025 px tudo empilha como antes.
+- **Lista de horas:** `.horas-trilho` usa `scroll-padding-inline` igual ao `padding` (20 px, 16 px no celular). Sem
+  isso, o encaixe da rolagem (`scroll-snap`) rola a lista sozinho e o "Agora" fica colado na borda do card.
+- **Bases alinhadas:** `.area-dias > *` tem `height: 100%`, para o card "Próximos 10 dias" terminar junto com os
+  cards de "Informações climáticas" no desktop.
 - `.container` usa `padding-inline` (não `padding`), senão zera o espaço vertical do `<main>`.
 - A linha superior do cabeçalho tem `z-index` para as sugestões da busca abrirem por cima das abas.
 
