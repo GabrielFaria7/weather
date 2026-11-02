@@ -347,6 +347,15 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 .atual-maxmin small { color: var(--texto-2); font-weight: 500; text-transform: uppercase; letter-spacing: .06em; font-size: 11px; }
 .atual-maxmin strong { font-size: 22px; font-weight: 700; }
 
+.atual-resumo {
+  display: flex; flex-direction: column; gap: 2px; margin: -6px 0 14px; padding: 10px 14px;
+  border-radius: var(--raio-p); background: rgba(255, 255, 255, .55); border: 1px solid rgba(255, 255, 255, .6);
+  font-size: 14px; line-height: 1.45;
+}
+.atual-resumo strong { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--texto-2); }
+:root[data-theme="dark"] .atual-resumo, .fundo-noite .atual-resumo {
+  background: rgba(255, 255, 255, .05); border-color: rgba(255, 255, 255, .08);
+}
 .atual-metricas {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 0;
 }
@@ -564,6 +573,17 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
   animation: esmaecer 1.2s ease-in-out infinite;
 }
 .favorito-abrir small { color: var(--texto-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.favorito-alerta {
+  --cor: var(--atencao); --cor-fundo: var(--atencao-fundo);
+  display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; max-width: 100%;
+  margin-top: 4px; padding: 1px 8px 1px 6px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; color: var(--texto);
+  background: var(--cor-fundo); border: 1px solid color-mix(in srgb, var(--cor) 45%, transparent);
+}
+.favorito-alerta.nivel-alerta { --cor: var(--alerta); --cor-fundo: var(--alerta-fundo); }
+.favorito-alerta.nivel-perigo { --cor: var(--perigo); --cor-fundo: var(--perigo-fundo); }
+.favorito-abrir .favorito-alerta .ui-icone { width: 12px; height: 12px; color: var(--cor); }
+.favorito-alerta-texto { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .favorito-remover {
   display: grid; place-items: center; width: 32px; height: 32px; margin-right: 6px;
   border: 0; border-radius: 8px; background: none; cursor: pointer; color: var(--texto-2);
@@ -631,6 +651,10 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 
 .rodape { padding-bottom: 32px; font-size: 12px; color: var(--texto-2); text-align: center; }
 .rodape p + p { margin-top: 4px; }
+.visualmente-oculto {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
 
 .clima-icone { flex: none; overflow: visible; }
 .ic-sol { fill: var(--solar); }
@@ -679,7 +703,7 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
   .area-horas { grid-column: span 8; }
   .area-lateral > * { height: auto; min-height: 0; display: flex; flex-direction: column; }
   .area-lateral > [data-area="alertas"] { flex: 1 1 0; }
-  .area-lateral > [data-area="favoritos"] { flex: 0 1 auto; max-height: 45%; }
+  .area-lateral > [data-area="favoritos"] { flex: 0 1 auto; max-height: 55%; }
   .area-lateral .card { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .alertas-corpo, .area-lateral .favoritos-lista {
     flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;

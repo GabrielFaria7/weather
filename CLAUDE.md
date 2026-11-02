@@ -31,7 +31,7 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
 - Não há servidor próprio: o Python é só o app do terminal. `descricoes.py` continua em Python porque o terminal
   usa; a tabela de descrições existe nas duas linguagens.
 - **Lógica pura fora dos componentes:** o que não depende de Leaflet nem do DOM fica em módulos próprios
-  (`painel.js`, `avisos.js`, `atualizacao.js`, `iqar.js`, `seriesPorHora.js`, `alertasOficiais.js`, `satelites.js`, `gradeVento.js`, `temperaturaMapa.js`, `formato.js`, `preferencias.js`, `servico.js`) e tem
+  (`painel.js`, `avisos.js`, `atualizacao.js`, `iqar.js`, `seriesPorHora.js`, `alertasOficiais.js`, `satelites.js`, `gradeVento.js`, `temperaturaMapa.js`, `resumo.js`, `formato.js`, `preferencias.js`, `servico.js`) e tem
   teste em `tests/js/` (`node:test`; `fetch` e `localStorage` são simulados nos testes). Ao criar lógica nova,
   seguir esse padrão e escrever o teste junto.
 - **Sem build no front:** HTML/CSS/JS puros. Chart.js e Leaflet vêm de CDN em `site/index.html`.
@@ -55,6 +55,14 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   (6 Perigo Potencial = amarelo, 7 Perigo = laranja, 8 Grande Perigo = vermelho), mais próximo. Horários do INMET
   são de Brasília (UTC−3). No painel, `alertas_oficiais` é `undefined` fora do Brasil (sem seção), `null` se a
   consulta falhou (mensagem) ou a lista. O card mostra os 2 primeiros e o resto em "Mais N alertas oficiais".
+  A resposta do INMET (grande, com todos os avisos do país) fica guardada por 5 min (`respostaDoInmet`), e
+  `buscarAlertasDosLugares` usa essa mesma resposta para vários lugares; só falhas não são guardadas.
+- **Alertas nos favoritos:** `favoritos.js` pede os alertas de todas as favoritas de uma vez
+  (`buscarAlertasDosLugares`, a mesma consulta do painel) e mostra embaixo do nome um selo com a cor do nível
+  (`.favorito-alerta.nivel-*`), o título, quando (`em vigor`, `a partir das HH:MM`, `a partir de amanhã` ou da data,
+  em horário de Brasília) e `+N` se houver mais (`seloDosAlertas` em `alertasOficiais.js`: o primeiro da lista já
+  ordenada). Fora do Brasil ou se a consulta falhar, não há selo. No desktop os favoritos podem ocupar até 55% da
+  coluna lateral, para 4 cidades com selo caberem sem rolar.
 - **Qualidade do ar com dois índices:** o painel mostra por padrão o **IQAr brasileiro** e permite trocar para o
   **EAQI europeu** nas configurações (`preferencias.indiceAr`: `"iqar"` | `"eaqi"`). `iqar.js` segue a Orientação
   Técnica do MMA de jan/2025 (Resolução CONAMA 506/2024): faixas do Quadro 1 (`POLUENTES_IQAR`), Equação 1 com
@@ -133,6 +141,11 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   satélites e tiles do mapa passam direto (não são guardados). **Ao criar ou remover arquivo em `site/`, ou trocar a
   versão de uma biblioteca de CDN, atualizar as listas do `sw.js`** (`tests/js/aplicativo.test.mjs` falha se faltar).
   `VERSAO` só precisa mudar se a forma de guardar mudar.
+- **Resumo do dia:** `resumoDoDia` (`resumo.js`) escreve uma frase sobre as próximas 12 horas, mostrada no card
+  principal em "Próximas horas": chuva (começa, para, o tempo todo, com trovoadas, pouca chance ou sem chuva; conta
+  como chuva a hora com chance ≥ 50% e ≥ 0,1 mm), temperatura (máxima de hoje, se ainda vai esquentar, ou "caindo até"
+  a mínima das próximas horas) e rajadas ≥ 50 km/h. Respeita °C/°F, unidade de vento e relógio de 12/24 h, com
+  "da 01:00" e "da meia-noite" no singular. Previsões salvas sem mm/rajadas por hora usam só a chance.
 - **Atualização automática:** com o painel aberto e a aba visível, `main.js` busca a previsão de novo a cada 15 min
   (`deveAtualizar` e `INTERVALO_ATUALIZACAO_MS` em `atualizacao.js`; confere a cada 30 s e no `visibilitychange`, então
   quem volta ao app depois de horas recebe dados novos na hora). Não atualiza sem internet nem com a janela de um dia

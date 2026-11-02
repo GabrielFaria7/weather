@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { afterEach, test } from "node:test";
 import {
-  alertasOficiaisPara, instanteBrasilia, municipioNaLista, noBrasil, periodoDoAlerta, pontoNaArea,
+  alertasOficiaisPara, instanteBrasilia, municipioNaLista, noBrasil, periodoDoAlerta, pontoNaArea, seloDosAlertas,
 } from "../../site/js/alertasOficiais.js";
-import { buscarAlertasOficiais } from "../../site/js/servico.js";
+import { buscarAlertasDosLugares, buscarAlertasOficiais } from "../../site/js/servico.js";
 
 const AVISOS = JSON.parse(readFileSync(new URL("./dados/inmet-avisos-2026-11-01.json", import.meta.url), "utf8"));
 const AGORA = Date.parse("2026-11-01T22:40:00Z");
@@ -137,4 +137,77 @@ test("consulta ao INMET usa o endereço oficial", async () => {
   globalThis.fetch = async (url) => { endereco = url; return { ok: true, json: async () => ({ hoje: [], futuro: [] }) }; };
   assert.deepEqual(await buscarAlertasOficiais(cidade("Brasília", "Distrito Federal", -15.78, -47.93)), []);
   assert.equal(endereco, "https://apiprevmet3.inmet.gov.br/avisos/ativos");
+});
+
+test("selo do favorito mostra o alerta principal e quantos há a mais", () => {
+  const brasilia = alertasOficiaisPara(AVISOS, cidade("Brasília", "Distrito Federal", -15.78, -47.93), AGORA);
+  assert.deepEqual(seloDosAlertas(brasilia, AGORA), {
+    nivel: "atencao", titulo: "Chuvas Intensas", severidade: "Perigo Potencial", quando: "em vigor", outros: 1,
+  });
+  const londrina = seloDosAlertas(alertasOficiaisPara(AVISOS, cidade("Londrina", "Paraná", -23.31, -51.16), AGORA), AGORA);
+  assert.equal(londrina.nivel, "alerta");
+  assert.equal(londrina.titulo, "Tempestade");
+  assert.equal(londrina.quando, "a partir de amanhã");
+  assert.equal(londrina.outros, 3);
+});
+
+test("selo de alerta que ainda vai começar diz quando", () => {
+  const alerta = (inicio) => [{ titulo: "Chuvas Intensas", nivel: "atencao", severidade: "Perigo Potencial", vigente: false, inicio }];
+  const agora = Date.parse("2026-11-02T10:00:00Z");
+  assert.equal(seloDosAlertas(alerta(Date.parse("2026-11-02T12:34:00Z")), agora).quando, "a partir das 09:34");
+  assert.equal(seloDosAlertas(alerta(Date.parse("2026-11-03T12:00:00Z")), agora).quando, "a partir de amanhã");
+  assert.equal(seloDosAlertas(alerta(Date.parse("2026-11-05T12:00:00Z")), agora).quando, "a partir de 05/11");
+});
+
+test("sem alertas, sem consulta ou com falha não há selo", () => {
+  assert.equal(seloDosAlertas([]), null);
+  assert.equal(seloDosAlertas(null), null);
+  assert.equal(seloDosAlertas(undefined), null);
+});
+
+const DEPOIS = Date.parse("2030-01-01T12:00:00Z");
+const MINUTO = 60 * 1000;
+
+test("uma consulta ao INMET serve a todos os lugares do Brasil", async () => {
+  let pedidos = 0;
+  globalThis.fetch = async () => { pedidos++; return { ok: true, json: async () => AVISOS }; };
+  const lugares = [
+    cidade("Brasília", "Distrito Federal", -15.78, -47.93),
+    { nome: "Lisboa", estado: "Lisboa", pais: "Portugal", latitude: 38.72, longitude: -9.14 },
+    cidade("Londrina", "Paraná", -23.31, -51.16),
+  ];
+  const [brasilia, lisboa, londrina] = await buscarAlertasDosLugares(lugares, { agora: AGORA + 400 * 24 * 60 * MINUTO });
+  assert.equal(pedidos, 1);
+  assert.ok(Array.isArray(brasilia));
+  assert.equal(lisboa, undefined);
+  assert.ok(Array.isArray(londrina));
+});
+
+test("a resposta do INMET fica guardada por 5 minutos", async () => {
+  let pedidos = 0;
+  globalThis.fetch = async () => { pedidos++; return { ok: true, json: async () => ({ hoje: [], futuro: [] }) }; };
+  const brasilia = cidade("Brasília", "Distrito Federal", -15.78, -47.93);
+  await buscarAlertasOficiais(brasilia, { agora: DEPOIS });
+  await buscarAlertasDosLugares([brasilia], { agora: DEPOIS + 4 * MINUTO });
+  assert.equal(pedidos, 1);
+  await buscarAlertasOficiais(brasilia, { agora: DEPOIS + 6 * MINUTO });
+  assert.equal(pedidos, 2);
+});
+
+test("falha do INMET não fica guardada e vira null só para o Brasil", async () => {
+  let pedidos = 0;
+  globalThis.fetch = async () => { pedidos++; throw new TypeError("sem rede"); };
+  const lugares = [cidade("Brasília", "Distrito Federal", -15.78, -47.93), { nome: "Paris", pais: "França", latitude: 48.85, longitude: 2.35 }];
+  assert.deepEqual(await buscarAlertasDosLugares(lugares, { agora: DEPOIS + 60 * MINUTO }), [null, undefined]);
+  globalThis.fetch = async () => { pedidos++; return { ok: true, json: async () => ({ hoje: [], futuro: [] }) }; };
+  assert.deepEqual(await buscarAlertasDosLugares(lugares, { agora: DEPOIS + 61 * MINUTO }), [[], undefined]);
+  assert.equal(pedidos, 2);
+});
+
+test("lista só com lugares fora do Brasil nem consulta o INMET", async () => {
+  let pedidos = 0;
+  globalThis.fetch = async () => { pedidos++; return { ok: true, json: async () => AVISOS }; };
+  assert.deepEqual(await buscarAlertasDosLugares([{ nome: "Tóquio", latitude: 35.68, longitude: 139.69 }]), [undefined]);
+  assert.deepEqual(await buscarAlertasDosLugares([]), []);
+  assert.equal(pedidos, 0);
 });

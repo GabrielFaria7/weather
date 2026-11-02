@@ -18,6 +18,7 @@ const LIMITE_MERCATOR = 20037508.342789244;
 const JANELA_SATELITE_MS = 4 * 60 * 60 * 1000;
 const VALIDADE_PREVISAO_SALVA_MS = 7 * 24 * 60 * 60 * 1000;
 const VALIDADE_CLIMA_ATUAL_MS = 10 * 60 * 1000;
+const VALIDADE_ALERTAS_MS = 5 * 60 * 1000;
 
 const POLUENTES = "pm10,pm2_5,ozone,nitrogen_dioxide,sulphur_dioxide,carbon_monoxide";
 const PARAMETROS_QUALIDADE_AR = {
@@ -222,15 +223,32 @@ export async function buscarClimaAtual(locais, { signal, agora = Date.now() } = 
   return locais.map((l) => climaAtualGuardado.get(chaveDoLocal(l))?.dados ?? null);
 }
 
-export async function buscarAlertasOficiais(local, { signal } = {}) {
-  if (!noBrasil(local)) return undefined;
+let alertasGuardados = null;
+
+async function respostaDoInmet({ signal, agora = Date.now() } = {}) {
+  const idade = agora - (alertasGuardados?.quando ?? -Infinity);
+  if (idade >= 0 && idade < VALIDADE_ALERTAS_MS) return alertasGuardados.resposta;
+  const resposta = await fetch(URL_ALERTAS_INMET, { signal: sinalComLimite(signal) });
+  if (!resposta.ok) throw new Error(`O INMET respondeu com o código ${resposta.status}.`);
+  const dados = await resposta.json();
+  alertasGuardados = { quando: agora, resposta: dados };
+  return dados;
+}
+
+export async function buscarAlertasDosLugares(lugares, opcoes = {}) {
+  const noPais = lugares.map((l) => noBrasil(l));
+  if (!noPais.some(Boolean)) return lugares.map(() => undefined);
   try {
-    const resposta = await fetch(URL_ALERTAS_INMET, { signal: sinalComLimite(signal) });
-    if (!resposta.ok) return null;
-    return alertasOficiaisPara(await resposta.json(), local);
+    const resposta = await respostaDoInmet(opcoes);
+    return lugares.map((l, i) => (noPais[i] ? alertasOficiaisPara(resposta, l, opcoes.agora) : undefined));
   } catch {
-    return null;
+    return noPais.map((sim) => (sim ? null : undefined));
   }
+}
+
+export async function buscarAlertasOficiais(local, opcoes) {
+  const [alertas] = await buscarAlertasDosLugares([local], opcoes);
+  return alertas;
 }
 
 function previsaoSalvaRecente(posicao) {

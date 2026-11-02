@@ -107,3 +107,21 @@ export function periodoDoAlerta({ inicio, fim, vigente }, agora = Date.now()) {
   }
   return `De ${nomeDoDia(inicio, agora)} às ${horaBrasilia(inicio)} até ${quandoFim}`;
 }
+
+export function seloDosAlertas(alertas, agora = Date.now()) {
+  if (!alertas?.length) return null;
+  const [principal] = alertas;
+  let quando = "em vigor";
+  if (!principal.vigente) {
+    quando = diaBrasilia(principal.inicio) === diaBrasilia(agora)
+      ? `a partir das ${horaBrasilia(principal.inicio)}`
+      : `a partir de ${nomeDoDia(principal.inicio, agora)}`;
+  }
+  return {
+    nivel: principal.nivel,
+    titulo: principal.titulo,
+    severidade: principal.severidade,
+    quando,
+    outros: alertas.length - 1,
+  };
+}

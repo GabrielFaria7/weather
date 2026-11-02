@@ -1,11 +1,13 @@
 import { textoAtualizacao } from "../atualizacao.js";
 import { agoraNaCidade, direcao, esc, nomeCompleto, porcentagem, temperatura, vento } from "../formato.js";
 import { classeFundo, iconeClima, iconeUI } from "../icones.js";
+import { resumoDoDia } from "../resumo.js";
 
 export function renderizarAtual(el, dados, ctx) {
   const { local, atual, dias, fuso } = dados;
   const hoje = dias[0];
   const unidadeTexto = ctx.unidade === "F" ? "F" : "C";
+  const resumo = resumoDoDia(dados.por_hora, ctx);
 
   el.innerHTML = `
     <article class="card card-atual ${classeFundo(atual.codigo, atual.dia)}" id="hoje" aria-labelledby="atual-local">
@@ -39,6 +41,8 @@ export function renderizarAtual(el, dados, ctx) {
           <span><small>Mín</small><strong>${temperatura(hoje.min, ctx.unidade)}</strong></span>
         </div>
       </div>
+
+      ${resumo ? `<p class="atual-resumo"><strong>Próximas horas</strong><span>${esc(resumo)}</span></p>` : ""}
 
       <dl class="atual-metricas">
         <div><dt>${iconeUI("guardaChuva")}Chance de chuva</dt><dd>${porcentagem(hoje.chance_chuva)}</dd></div>

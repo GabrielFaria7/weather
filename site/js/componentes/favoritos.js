@@ -1,7 +1,8 @@
+import { seloDosAlertas } from "../alertasOficiais.js";
 import { esc, temperatura } from "../formato.js";
 import { iconeClima, iconeUI } from "../icones.js";
 import { favoritos, mesmoLocal } from "../preferencias.js";
-import { buscarClimaAtual } from "../servico.js";
+import { buscarAlertasDosLugares, buscarClimaAtual } from "../servico.js";
 
 let ultimaRenderizacao = 0;
 
@@ -9,6 +10,16 @@ function climaHtml(clima, unidade) {
   if (!clima) return "";
   return `${iconeClima(clima.codigo, clima.dia, { tamanho: 28, rotulo: clima.descricao })}
     <span class="favorito-temp">${temperatura(clima.temperatura, unidade)}</span>`;
+}
+
+function seloHtml(selo) {
+  const outros = selo.outros ? ` · +${selo.outros}` : "";
+  const descricao = `Alerta oficial do INMET (${selo.severidade}): ${selo.titulo}, ${selo.quando}.`
+    + (selo.outros ? ` Mais ${selo.outros} ${selo.outros === 1 ? "alerta" : "alertas"}.` : "");
+  return `<span class="favorito-alerta nivel-${selo.nivel}" title="${esc(descricao)}">
+    ${iconeUI("alerta")}<span class="visualmente-oculto">Alerta oficial do INMET:</span>
+    <span class="favorito-alerta-texto">${esc(selo.titulo)} · ${esc(selo.quando)}${outros}</span>
+  </span>`;
 }
 
 export function renderizarFavoritos(el, localAtual, { aoEscolher, aoMudar, unidade = "C", climaDoLocalAtual = null }) {
@@ -24,7 +35,7 @@ export function renderizarFavoritos(el, localAtual, { aoEscolher, aoMudar, unida
             ${lista.map((f, i) => `
               <li class="favorito ${ehAtual(f) ? "ativo" : ""}">
                 <button type="button" class="favorito-abrir" data-abrir="${i}">
-                  ${iconeUI("pino")}<span class="favorito-nome"><strong>${esc(f.nome)}</strong><small>${esc([f.estado, f.pais].filter(Boolean).join(", "))}</small></span>
+                  ${iconeUI("pino")}<span class="favorito-nome"><strong>${esc(f.nome)}</strong><small>${esc([f.estado, f.pais].filter(Boolean).join(", "))}</small><span data-alerta="${i}"></span></span>
                   <span class="favorito-clima ${ehAtual(f) && climaDoLocalAtual ? "" : "carregando"}" data-clima="${i}">${ehAtual(f) ? climaHtml(climaDoLocalAtual, unidade) : ""}</span>
                 </button>
                 <button type="button" class="favorito-remover" data-remover="${i}" aria-label="Remover ${esc(f.nome)} dos favoritos">
@@ -40,6 +51,17 @@ export function renderizarFavoritos(el, localAtual, { aoEscolher, aoMudar, unida
     favoritos.remover(lista[b.dataset.remover]);
     aoMudar();
   }));
+
+  if (lista.length) {
+    buscarAlertasDosLugares(lista).then((alertas) => {
+      if (esteDesenho !== ultimaRenderizacao) return;
+      alertas.forEach((doLugar, i) => {
+        const selo = seloDosAlertas(doLugar);
+        const alvo = el.querySelector(`[data-alerta="${i}"]`);
+        if (selo && alvo) alvo.outerHTML = seloHtml(selo);
+      });
+    }).catch(() => {});
+  }
 
   const pendentes = lista.map((f, i) => [f, i]).filter(([f]) => !(ehAtual(f) && climaDoLocalAtual));
   if (!pendentes.length) return;
