@@ -23,7 +23,7 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   Fica como está: por decisão do dono do projeto, o app do terminal não recebe novas funções (as pessoas usam a
   interface web). Só corrigir se quebrar.
 - **Web (site estático em `site/`):** o **navegador** consulta a Open-Meteo direto (`site/js/servico.js`:
-  geocodificação, previsão de 10 dias e qualidade do ar) e monta o painel ali mesmo (`site/js/painel.js`,
+  geocodificação, previsão de 10 dias, qualidade do ar e mar) e monta o painel ali mesmo (`site/js/painel.js`,
   `avisos.js`, `descricoes.js`, portados do antigo `painel.py`/`avisos.py`). O front desenha tudo com módulos ES
   em `site/js/componentes/` (um arquivo por seção da tela). Não existe mais `POST /api/painel`.
 - **Caminhos relativos:** o GitHub Pages serve o site em `/weather/`, então `site/index.html` usa caminhos relativos
@@ -31,7 +31,7 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
 - Não há servidor próprio: o Python é só o app do terminal. `descricoes.py` continua em Python porque o terminal
   usa; a tabela de descrições existe nas duas linguagens.
 - **Lógica pura fora dos componentes:** o que não depende de Leaflet nem do DOM fica em módulos próprios
-  (`painel.js`, `avisos.js`, `atualizacao.js`, `compartilhar.js`, `iqar.js`, `seriesPorHora.js`, `alertasOficiais.js`, `satelites.js`, `gradeVento.js`, `temperaturaMapa.js`, `resumo.js`, `formato.js`, `preferencias.js`, `servico.js`) e tem
+  (`painel.js`, `avisos.js`, `atualizacao.js`, `compartilhar.js`, `iqar.js`, `lua.js`, `seriesPorHora.js`, `alertasOficiais.js`, `satelites.js`, `gradeVento.js`, `temperaturaMapa.js`, `resumo.js`, `formato.js`, `preferencias.js`, `servico.js`) e tem
   teste em `tests/js/` (`node:test`; `fetch` e `localStorage` são simulados nos testes). Ao criar lógica nova,
   seguir esse padrão e escrever o teste junto.
 - **Sem build no front:** HTML/CSS/JS puros. Chart.js e Leaflet vêm de CDN em `site/index.html`.
@@ -157,6 +157,24 @@ node --test "tests/js/*.test.mjs"              # testes JavaScript (Node 22+, se
   sistema (`navigator.share`) e, se não houver, copia texto + link (`navigator.clipboard`) com aviso. Privacidade: para
   "Sua localização" (GPS), o link vai com as coordenadas arredondadas para 2 casas (~1 km) e o nome "Local
   compartilhado", nunca a posição exata.
+- **Lua:** `lua.js` calcula tudo no navegador, sem API: posição da Lua e do Sol pelas séries de baixa precisão de
+  Meeus (Astronomical Algorithms, cap. 47, os 18 primeiros termos da longitude), fase (`faseDaLua`: fração do ciclo,
+  % iluminada, nome em português, crescendo ou não), nascer/pôr do dia local (`nascerEPorDaLua`: borda de cima no
+  horizonte com refração de 34′ e paralaxe, amostrando a cada 10 min e refinando; trata "não nasce hoje", "não se
+  põe hoje" e lua o dia todo acima/abaixo perto dos polos) e próximas lua cheia e nova (`proximaFase`). O Sol usa a
+  longitude média **do equinócio da data** (280,46646 + 0,98564736·d): com a do periélio fixo de J2000 as fases saíam
+  ~45 min adiantadas. Conferido com o PyEphem: fases a menos de 10 min, nascer/pôr a menos de 5 min, iluminação a
+  0,5% (`tests/js/lua.test.mjs`). `desenhoDaLua` monta o caminho SVG da parte iluminada, espelhado no hemisfério sul.
+  O painel guarda `deslocamento` (`utc_offset_seconds`) para achar a meia-noite local.
+- **Mar:** `buscarPrevisao` consulta junto a Open-Meteo Marine (`marine-api.open-meteo.com`: altura, direção e período
+  das ondas, temperatura da água e máxima de ondas de hoje e amanhã); se falhar, `mar` fica `null` sem atrapalhar a
+  previsão. Cidades longe do mar recebem tudo `null`, e `montarMar` devolve `null`: o card "Mar" (`componentes/mar.js`)
+  só aparece no litoral. `classificarMar` dá o estado pela altura (faixas da escala Douglas: calmo < 0,5 m, pouco
+  agitado < 1,25, agitado < 2,5, muito agitado < 4, grosso < 6, muito grosso). O card diz que é estimativa de modelo,
+  não medição de boia. Previsões salvas (offline) ficam sem mar.
+- **Lua e Mar na tela:** última linha do painel. No litoral os dois cards dividem a linha (`.painel.com-mar`, 6 + 6
+  colunas); no interior a Lua ocupa a linha inteira e organiza os dados na horizontal (container query em
+  `.area-lua`/`.area-mar`, a partir de 760 px de largura do card). No celular empilham.
 - **Atualização automática:** com o painel aberto e a aba visível, `main.js` busca a previsão de novo a cada 15 min
   (`deveAtualizar` e `INTERVALO_ATUALIZACAO_MS` em `atualizacao.js`; confere a cada 30 s e no `visibilitychange`, então
   quem volta ao app depois de horas recebe dados novos na hora). Não atualiza sem internet nem com a janela de um dia

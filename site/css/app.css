@@ -262,6 +262,10 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 .area-indicadores { grid-column: span 5; }
 .area-ar { grid-column: span 4; }
 .area-mapa { grid-column: span 8; }
+.area-lua, .area-mar { grid-column: span 12; container-type: inline-size; }
+.painel.com-mar .area-lua, .painel.com-mar .area-mar { grid-column: span 6; }
+.area-mar[hidden] { display: none; }
+.area-lua > *, .area-mar > * { height: 100%; }
 .area-lateral > *, .area-ar > *, .area-mapa > *, .area-dias > * { height: 100%; }
 
 .card {
@@ -280,6 +284,34 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
 .titulo-secao { margin: 0 0 12px 4px; }
 .card-dica { font-size: 12px; color: var(--texto-2); }
 .card-fonte { margin-top: 14px; font-size: 12px; color: var(--texto-2); }
+
+.lua-corpo { display: flex; flex-direction: column; gap: 16px; }
+.lua-topo { display: flex; align-items: center; gap: 16px; }
+.lua-desenho { flex: none; filter: drop-shadow(0 6px 14px rgba(23, 32, 51, .18)); }
+.lua-sombra { fill: #334058; }
+.lua-luz { fill: #F4E4A8; }
+.lua-borda { fill: none; stroke: rgba(23, 32, 51, .12); stroke-width: 1; }
+:root[data-theme="dark"] .lua-sombra { fill: #0B1222; }
+:root[data-theme="dark"] .lua-borda { stroke: rgba(255, 255, 255, .14); }
+.lua-fase { font-size: 19px; font-weight: 700; }
+.lua-iluminacao { color: var(--texto-2); }
+.mar-icone {
+  display: grid; place-items: center; flex: none; width: 76px; height: 76px; border-radius: 50%;
+  background: color-mix(in srgb, var(--primaria) 14%, transparent); color: var(--primaria);
+}
+.mar-icone .ui-icone { width: 38px; height: 38px; }
+.astro-metricas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.astro-metricas > div {
+  display: flex; flex-direction: column; gap: 2px; min-width: 0;
+  padding: 12px 14px; border-radius: var(--raio-p); background: var(--superficie-2);
+}
+.astro-metricas dt { font-size: 12px; color: var(--texto-2); }
+.astro-metricas dd { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 20px; font-weight: 700; }
+.astro-metricas small { font-size: 12px; color: var(--texto-2); }
+@container (min-width: 760px) {
+  .lua-corpo { display: grid; grid-template-columns: minmax(240px, auto) 1fr; align-items: center; gap: 24px; }
+  .astro-metricas { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
 
 .card-atual {
   position: relative; overflow: hidden;
@@ -742,6 +774,7 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 60vh; outline: none;
   .painel { gap: 16px; }
   .area-lateral { grid-template-columns: 1fr; gap: 16px; }
   .area-ar, .area-mapa { grid-column: span 12; }
+  .painel.com-mar .area-lua, .painel.com-mar .area-mar { grid-column: span 12; }
   .indicadores-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
   .card { padding: 16px; }

@@ -6,6 +6,7 @@ import { previsoesSalvas } from "./preferencias.js";
 const URL_GEOCODIFICACAO = "https://geocoding-api.open-meteo.com/v1/search";
 const URL_PREVISAO = "https://api.open-meteo.com/v1/forecast";
 const URL_QUALIDADE_AR = "https://air-quality-api.open-meteo.com/v1/air-quality";
+const URL_MAR = "https://marine-api.open-meteo.com/v1/marine";
 const URL_ALERTAS_INMET = "https://apiprevmet3.inmet.gov.br/avisos/ativos";
 const TEMPO_LIMITE_MS = 10000;
 const PASSO_GRADE_MAPA = 0.5;
@@ -27,6 +28,13 @@ const PARAMETROS_QUALIDADE_AR = {
   hourly: POLUENTES,
   past_days: 1,
   forecast_days: 1,
+};
+
+const PARAMETROS_MAR = {
+  timezone: "auto",
+  current: "wave_height,wave_direction,wave_period,sea_surface_temperature",
+  daily: "wave_height_max",
+  forecast_days: 2,
 };
 
 const PARAMETROS_PREVISAO = {
@@ -263,12 +271,14 @@ export async function buscarPrevisao(local, opcoes) {
   const alertasOficiais = buscarAlertasOficiais(dadosDoLocal, opcoes);
   let previsao;
   let ar;
+  let mar;
   try {
-    [previsao, ar] = await Promise.all([
+    [previsao, ar, mar] = await Promise.all([
       pedirOpenMeteo(URL_PREVISAO, { ...posicao, ...PARAMETROS_PREVISAO }, opcoes),
       pedirOpenMeteo(URL_QUALIDADE_AR, { ...posicao, ...PARAMETROS_QUALIDADE_AR }, opcoes)
         .then((dados) => (dados.current ? { current: dados.current, hourly: dados.hourly ?? null } : null))
         .catch(() => null),
+      pedirOpenMeteo(URL_MAR, { ...posicao, ...PARAMETROS_MAR }, opcoes).catch(() => null),
     ]);
   } catch (erro) {
     const salva = erro.name === "AbortError" ? null : previsaoSalvaRecente(posicao);
@@ -277,7 +287,7 @@ export async function buscarPrevisao(local, opcoes) {
     return { ...painel, alertas_oficiais: await alertasOficiais, salvaEm: salva.quando, motivo: erro.message };
   }
 
-  const painel = montarPainel(dadosDoLocal, previsao, ar);
+  const painel = montarPainel(dadosDoLocal, previsao, ar, mar);
   previsoesSalvas.guardar(posicao, previsao, ar);
   return { ...painel, alertas_oficiais: await alertasOficiais };
 }

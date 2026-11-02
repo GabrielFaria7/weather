@@ -13,6 +13,34 @@ const NIVEIS_QUALIDADE_AR = [
   [100, "Muito ruim"],
 ];
 
+const ESTADOS_DO_MAR = [
+  [0.5, "Mar calmo"],
+  [1.25, "Mar pouco agitado"],
+  [2.5, "Mar agitado"],
+  [4, "Mar muito agitado"],
+  [6, "Mar grosso"],
+];
+
+export function classificarMar(altura) {
+  if (altura == null) return null;
+  return ESTADOS_DO_MAR.find(([limite]) => altura < limite)?.[1] ?? "Mar muito grosso";
+}
+
+export function montarMar(mar) {
+  const atual = mar?.current;
+  if (!atual || (atual.wave_height == null && atual.sea_surface_temperature == null)) return null;
+  const maximas = mar.daily?.wave_height_max ?? [];
+  return {
+    ondas: atual.wave_height ?? null,
+    direcao: atual.wave_direction ?? null,
+    periodo: atual.wave_period ?? null,
+    agua: atual.sea_surface_temperature ?? null,
+    ondas_max_hoje: maximas[0] ?? null,
+    ondas_max_amanha: maximas[1] ?? null,
+    estado: classificarMar(atual.wave_height),
+  };
+}
+
 export function classificarQualidadeAr(indice) {
   if (indice == null) return null;
   return NIVEIS_QUALIDADE_AR.find(([limite]) => indice <= limite)?.[1] ?? "Extremamente ruim";
@@ -67,7 +95,7 @@ function montarQualidadeAr(ar) {
   };
 }
 
-export function montarPainel(local, previsao, ar = null) {
+export function montarPainel(local, previsao, ar = null, mar = null) {
   if (!previsao || !BLOCOS_DA_PREVISAO.every((bloco) => previsao[bloco] && typeof previsao[bloco] === "object")) {
     throw new Error("Os dados da previsão vieram incompletos. Tente de novo em instantes.");
   }
@@ -88,6 +116,7 @@ export function montarPainel(local, previsao, ar = null) {
   return {
     local: { ...local, nome: local.nome || "Sua localização" },
     fuso: previsao.timezone ?? "UTC",
+    deslocamento: previsao.utc_offset_seconds ?? 0,
     atual: {
       horario: atual.time,
       temperatura: atual.temperature_2m,
@@ -109,6 +138,7 @@ export function montarPainel(local, previsao, ar = null) {
     dias,
     ontem: ontem && { data: ontem.data, max: ontem.max, min: ontem.min },
     qualidade_ar: montarQualidadeAr(ar),
+    mar: montarMar(mar),
     avisos: gerarAvisos(dias),
   };
 }

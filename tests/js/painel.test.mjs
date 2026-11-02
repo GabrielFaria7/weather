@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { classificarQualidadeAr, montarPainel } from "../../site/js/painel.js";
+import { classificarMar, classificarQualidadeAr, montarMar, montarPainel } from "../../site/js/painel.js";
 import { previsaoFalsa } from "./dados_falsos.mjs";
 
 const LOCAL = { nome: "Manaus", estado: "Amazonas", pais: "Brasil", latitude: -3.1, longitude: -60.0 };
@@ -92,4 +92,39 @@ test("previsão sem o dia de ontem continua funcionando", () => {
   const painel = montarPainel(LOCAL, previsaoFalsa());
   assert.equal(painel.ontem, null);
   assert.equal(painel.dias.length, 2);
+});
+
+const MAR_RIO = {
+  utc_offset_seconds: -10800,
+  current: { time: "2026-11-01T23:15", wave_height: 0.64, wave_direction: 143, wave_period: 6.75, sea_surface_temperature: 23.7 },
+  daily: { time: ["2026-11-01", "2026-11-02"], wave_height_max: [0.9, 1.4] },
+};
+
+test("estado do mar pela altura das ondas", () => {
+  assert.equal(classificarMar(0.3), "Mar calmo");
+  assert.equal(classificarMar(0.64), "Mar pouco agitado");
+  assert.equal(classificarMar(1.25), "Mar agitado");
+  assert.equal(classificarMar(3), "Mar muito agitado");
+  assert.equal(classificarMar(5), "Mar grosso");
+  assert.equal(classificarMar(7), "Mar muito grosso");
+  assert.equal(classificarMar(null), null);
+});
+
+test("dados do mar de uma cidade do litoral", () => {
+  assert.deepEqual(montarMar(MAR_RIO), {
+    ondas: 0.64, direcao: 143, periodo: 6.75, agua: 23.7, ondas_max_hoje: 0.9, ondas_max_amanha: 1.4, estado: "Mar pouco agitado",
+  });
+  assert.deepEqual(montarPainel(LOCAL, previsaoFalsa(), null, MAR_RIO).mar.ondas, 0.64);
+});
+
+test("cidade longe do mar não tem dados do mar", () => {
+  const interior = { current: { time: "2026-11-01T23:15", wave_height: null, wave_direction: null, wave_period: null, sea_surface_temperature: null } };
+  assert.equal(montarMar(interior), null);
+  assert.equal(montarMar(null), null);
+  assert.equal(montarPainel(LOCAL, previsaoFalsa()).mar, null);
+});
+
+test("deslocamento do fuso vem da previsão", () => {
+  assert.equal(montarPainel(LOCAL, { ...previsaoFalsa(), utc_offset_seconds: -14400 }).deslocamento, -14400);
+  assert.equal(montarPainel(LOCAL, previsaoFalsa()).deslocamento, 0);
 });

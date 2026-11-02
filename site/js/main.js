@@ -13,6 +13,8 @@ import { renderizarIndicadores } from "./componentes/indicadores.js";
 import { renderizarQualidadeAr } from "./componentes/qualidadeAr.js";
 import { renderizarAlertas } from "./componentes/alertas.js";
 import { renderizarFavoritos } from "./componentes/favoritos.js";
+import { renderizarLua } from "./componentes/lua.js";
+import { renderizarMar } from "./componentes/mar.js";
 import { mostrarAviso, renderizarCarregando, renderizarErro, renderizarVazio } from "./componentes/estados.js";
 
 const principal = document.getElementById("conteudo");
@@ -153,6 +155,8 @@ function montarPainel() {
       <div class="area-indicadores" data-area="indicadores"></div>
       <div class="area-ar" data-area="ar"></div>
       <div class="area-mapa" data-area="mapa"></div>
+      <div class="area-lua" data-area="lua"></div>
+      <div class="area-mar" data-area="mar" hidden></div>
     </div>`;
   renderizarConteudo();
   principal.querySelector("[data-recarregar]")?.addEventListener("click", () => carregar(estado.local));
@@ -184,6 +188,9 @@ function renderizarConteudo() {
   renderizarDias(area("dias"), estado.dados, ctx);
   renderizarIndicadores(area("indicadores"), estado.dados, ctx);
   renderizarQualidadeAr(area("ar"), estado.dados, ctx);
+  renderizarLua(area("lua"), estado.dados, ctx);
+  renderizarMar(area("mar"), estado.dados, ctx);
+  principal.querySelector(".painel")?.classList.toggle("com-mar", Boolean(estado.dados.mar));
   atualizarMapa(ctx);
 }
 

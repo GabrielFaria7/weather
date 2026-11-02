@@ -193,11 +193,26 @@ test("previsão completa monta o painel no navegador", async () => {
     ? { corpo: { current: { european_aqi: 55, pm2_5: 9, pm10: 15, ozone: 60, nitrogen_dioxide: 8 } } }
     : url.hostname.endsWith("inmet.gov.br") ? { corpo: { hoje: [], futuro: [] } } : { corpo: previsaoFalsa() }));
   const painel = await buscarPrevisao({ nome: "Manaus", estado: "Amazonas", pais: "Brasil", latitude: -3.1, longitude: -60 });
-  assert.deepEqual(pedidos.map((p) => p.hostname).sort(), ["air-quality-api.open-meteo.com", "api.open-meteo.com", "apiprevmet3.inmet.gov.br"]);
+  assert.deepEqual(pedidos.map((p) => p.hostname).sort(), [
+    "air-quality-api.open-meteo.com", "api.open-meteo.com", "apiprevmet3.inmet.gov.br", "marine-api.open-meteo.com",
+  ]);
   assert.deepEqual(painel.alertas_oficiais, []);
   assert.equal(painel.local.nome, "Manaus");
   assert.equal(painel.qualidade_ar.nivel, "Moderada");
   assert.equal(painel.por_hora.length, 24);
+});
+
+test("dados do mar vêm junto e a falha deles não impede a previsão", async () => {
+  const mar = { current: { wave_height: 1.1, wave_direction: 128, wave_period: 6.4, sea_surface_temperature: 23.8 }, daily: { wave_height_max: [1.3, 1.5] } };
+  simularFetch((url) => (url.hostname.startsWith("marine") ? { corpo: mar } : url.hostname.startsWith("air") ? { status: 500 } : { corpo: previsaoFalsa() }));
+  const santos = await buscarPrevisao({ nome: "Santos", latitude: -23.96, longitude: -46.33 });
+  assert.equal(santos.mar.estado, "Mar pouco agitado");
+  const pedidoMar = pedidos.find((p) => p.hostname === "marine-api.open-meteo.com");
+  assert.equal(pedidoMar.searchParams.get("current"), "wave_height,wave_direction,wave_period,sea_surface_temperature");
+  simularFetch((url) => (url.hostname.startsWith("marine") ? { falhar: new TypeError("sem rede") } : { corpo: previsaoFalsa() }));
+  const semMar = await buscarPrevisao({ nome: "Santos", latitude: -23.96, longitude: -46.33 });
+  assert.equal(semMar.mar, null);
+  assert.equal(semMar.por_hora.length, 24);
 });
 
 test("falha na qualidade do ar não impede a previsão", async () => {
