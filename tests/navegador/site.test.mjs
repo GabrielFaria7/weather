@@ -31,6 +31,13 @@ after(async () => {
   await servidor?.fechar();
 });
 
+const FAVORITOS = [
+  { nome: "Rio de Janeiro", estado: "Rio de Janeiro", pais: "Brasil", latitude: -22.90642, longitude: -43.18223 },
+  { nome: "Curitiba", estado: "Paraná", pais: "Brasil", latitude: -25.42778, longitude: -49.27306 },
+  { nome: "Londrina", estado: "Paraná", pais: "Brasil", latitude: -23.31028, longitude: -51.16278 },
+  { nome: "Lisboa", estado: "Lisboa", pais: "Portugal", latitude: 38.71667, longitude: -9.13333 },
+];
+
 async function abrir(modo, { caminho = RIO, ...simulacao } = {}) {
   const { tema, opcoes } = MODOS[modo];
   const contexto = await navegador.newContext({
@@ -38,12 +45,13 @@ async function abrir(modo, { caminho = RIO, ...simulacao } = {}) {
   });
   await simularServicos(contexto, simulacao);
   await contexto.addInitScript({ content: AXE });
-  await contexto.addInitScript((temaInicial) => {
+  await contexto.addInitScript(({ temaInicial, favoritos }) => {
     localStorage.setItem("weather.tema", temaInicial);
+    if (!localStorage.getItem("weather.favoritos")) localStorage.setItem("weather.favoritos", favoritos);
     document.addEventListener("securitypolicyviolation", (evento) => {
       console.error(`a CSP bloqueou ${evento.blockedURI} (${evento.violatedDirective})`);
     });
-  }, tema);
+  }, { temaInicial: tema, favoritos: JSON.stringify(FAVORITOS) });
   const pagina = await contexto.newPage();
   const problemas = [];
   pagina.on("pageerror", (erro) => problemas.push(`erro de JavaScript: ${erro.message}`));
@@ -102,8 +110,14 @@ for (const modo of Object.keys(MODOS)) {
     await pagina.locator("#lua").scrollIntoViewIfNeeded();
     assert.ok((await pagina.locator("#lua .lua-fase").textContent()).trim());
     assert.match(await pagina.locator("#mar").innerText(), /ondas/i);
-    const sobra = await pagina.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-    assert.ok(sobra <= 1, `a página rola para o lado (${sobra} px)`);
+    await pagina.waitForFunction(() => document.querySelectorAll(".favorito-alerta").length >= 2, null, { timeout: 20000 });
+    const largura = MODOS[modo].opcoes.viewport.width;
+    const sobra = await pagina.evaluate(() => document.documentElement.scrollWidth) - largura;
+    assert.ok(sobra <= 1, `a página passa da largura da tela (${sobra} px)`);
+    const cortados = await pagina.evaluate((limite) => [...document.querySelectorAll(".card, .card-atual")]
+      .filter((card) => card.getBoundingClientRect().right > limite + 1)
+      .map((card) => card.querySelector("h1, h2")?.textContent ?? card.className), largura);
+    assert.deepEqual(cortados, [], "cards passando da borda da tela");
 
     await semProblemasDeAcessibilidade(pagina, `painel (${modo})`);
     assert.deepEqual(problemas, []);

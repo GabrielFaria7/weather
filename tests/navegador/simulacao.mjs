@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { crc32, deflateSync } from "node:zlib";
 
 const DADOS = new URL("../js/dados/", import.meta.url);
-const INMET = readFileSync(new URL("inmet-avisos-2026-11-01.json", DADOS), "utf8");
+const INMET = JSON.parse(readFileSync(new URL("inmet-avisos-2026-11-01.json", DADOS), "utf8"));
 const QUALIDADE_DO_AR = readFileSync(new URL("open-meteo-ar-sao-paulo-2026-11-01.json", DADOS), "utf8");
 const DESLOCAMENTO = -10800;
 const HORA_MS = 3600 * 1000;
@@ -122,6 +122,16 @@ function horariosDeSatelite(agora = Date.now()) {
   return `${iso(inicio)}/${iso(fim)}/PT10M`;
 }
 
+function alertasDeHoje(agora = Date.now()) {
+  const dias = Math.round((Date.parse(isoLocal(agora).slice(0, 10)) - Date.parse("2026-11-01")) / (24 * HORA_MS));
+  const mover = (texto) => {
+    const [data, hora] = texto.split(" ");
+    return `${new Date(Date.parse(data) + dias * 24 * HORA_MS).toISOString().slice(0, 10)} ${hora}`;
+  };
+  const ajustar = (lista) => lista.map((alerta) => ({ ...alerta, inicio: mover(alerta.inicio), fim: mover(alerta.fim) }));
+  return { ...INMET, hoje: ajustar(INMET.hoje ?? []), futuro: ajustar(INMET.futuro ?? []) };
+}
+
 const comCors = { "access-control-allow-origin": "*" };
 const json = (corpo) => ({ status: 200, contentType: "application/json", headers: comCors, body: typeof corpo === "string" ? corpo : JSON.stringify(corpo) });
 const png = (dados) => ({ status: 200, contentType: "image/png", headers: comCors, body: dados });
@@ -144,7 +154,7 @@ export async function simularServicos(contexto, { atrasoComplementosMs = 0 } = {
   await contexto.route("https://marine-api.open-meteo.com/**", (rota) => rota.fulfill(json(MAR)));
   await contexto.route("https://apiprevmet3.inmet.gov.br/**", async (rota) => {
     await atrasar();
-    await rota.fulfill(json(INMET));
+    await rota.fulfill(json(alertasDeHoje()));
   });
   await contexto.route("https://gibs.earthdata.nasa.gov/**", (rota) => (rota.request().url().endsWith(".xml")
     ? rota.fulfill(xml(`<Domains><Domain>${horariosDeSatelite()}</Domain></Domains>`))

@@ -11,11 +11,11 @@ Tem duas formas de usar: no terminal e num painel web completo.
 
 **Painel web (modo claro)**
 
-![Painel web no modo claro com o clima atual de São Paulo, alertas oficiais do INMET, cidades favoritas com a temperatura de agora e a previsão por hora](docs/painel-claro.png)
+![Painel web no modo claro com o clima atual de São Paulo, resumo das próximas horas, comparação com ontem, alertas oficiais do INMET, favoritos com selos de alerta e a previsão por hora](docs/painel-claro.png)
 
 **Painel completo (modo escuro)**
 
-![Painel web no modo escuro com clima atual do Rio de Janeiro, alertas oficiais do INMET, favoritos, previsão por hora, 10 dias, indicadores, qualidade do ar (IQAr) e mapa](docs/painel-escuro.png)
+![Painel web no modo escuro com clima atual do Rio de Janeiro, alertas oficiais do INMET, favoritos com selos, previsão por hora, 10 dias, indicadores, qualidade do ar (IQAr), mapa, Lua e Mar](docs/painel-escuro.png)
 
 <table>
   <tr>
@@ -28,7 +28,7 @@ Tem duas formas de usar: no terminal e num painel web completo.
 
 **Temperatura (modo claro)**
 
-![Mapa do Rio de Janeiro no modo claro com o mapa de calor da temperatura prevista: a Baixada em laranja e as serras em amarelo e verde, mais frias pela altitude](docs/mapa-temperatura.png)
+![Mapa do Rio de Janeiro no modo claro com o mapa de calor da temperatura prevista e os nomes e temperaturas das cidades: a Baixada em laranja e as serras em amarelo e verde, mais frias pela altitude](docs/mapa-temperatura.png)
 
 <table>
   <tr>

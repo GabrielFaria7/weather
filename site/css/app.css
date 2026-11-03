@@ -612,7 +612,7 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 100vh; outline: none
 .alerta-mais ul { padding-left: 18px; }
 .alerta-mais li + li { margin-top: 4px; }
 
-.favoritos-lista { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.favoritos-lista { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
 .favorito { display: flex; align-items: center; border-radius: var(--raio-p); transition: background-color .2s; }
 .favorito:hover, .favorito.ativo { background: var(--primaria-suave); }
 .favorito-abrir {
@@ -780,7 +780,7 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 100vh; outline: none
 
 @media (max-width: 1024px) {
   .area-atual, .area-horas, .area-dias, .area-indicadores, .area-ar, .area-mapa { grid-column: span 12; }
-  .area-lateral { grid-column: span 12; display: grid; grid-template-columns: 1fr 1fr; }
+  .area-lateral { grid-column: span 12; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .indicadores-grade { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .area-ar { grid-column: span 5; }
   .area-mapa { grid-column: span 7; }
@@ -794,7 +794,7 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 100vh; outline: none
   html { scroll-padding-top: 170px; }
 
   .painel { gap: 16px; }
-  .area-lateral { grid-template-columns: 1fr; gap: 16px; }
+  .area-lateral { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .area-ar, .area-mapa { grid-column: span 12; }
   .painel.com-mar .area-lua, .painel.com-mar .area-mar { grid-column: span 12; }
   .indicadores-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); }

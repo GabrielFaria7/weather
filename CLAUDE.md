@@ -66,7 +66,9 @@ node --test "tests/navegador/*.test.mjs"       # testes no Chrome (Playwright + 
   (`.favorito-alerta.nivel-*`), o título, quando (`em vigor`, `a partir das HH:MM`, `a partir de amanhã` ou da data,
   em horário de Brasília) e `+N` se houver mais (`seloDosAlertas` em `alertasOficiais.js`: o primeiro da lista já
   ordenada). Fora do Brasil ou se a consulta falhar, não há selo. No desktop os favoritos podem ocupar até 55% da
-  coluna lateral, para 4 cidades com selo caberem sem rolar.
+  coluna lateral, para 4 cidades com selo caberem sem rolar. No celular e no tablet, a grade de `.area-lateral` e a
+  `.favoritos-lista` usam `minmax(0, 1fr)`: com `1fr`, o texto do selo (que não quebra linha) alargava a coluna e os
+  cards de alertas e favoritos passavam da tela.
 - **Qualidade do ar com dois índices:** o painel mostra por padrão o **IQAr brasileiro** e permite trocar para o
   **EAQI europeu** nas configurações (`preferencias.indiceAr`: `"iqar"` | `"eaqi"`). `iqar.js` segue a Orientação
   Técnica do MMA de jan/2025 (Resolução CONAMA 506/2024): faixas do Quadro 1 (`POLUENTES_IQAR`), Equação 1 com
@@ -240,7 +242,9 @@ node --test "tests/navegador/*.test.mjs"       # testes no Chrome (Playwright + 
   `addInitScript`, que não passa pela CSP. Cada teste falha com qualquer erro de JavaScript, erro no console (inclui
   bloqueio da CSP), pedido que falhe ou problema do axe (WCAG 2.1 A/AA + boas práticas). Cobre: painel completo em
   claro, escuro e celular (gráfico e abas, janela do dia, Lua, Mar, sem rolagem lateral), mapa (Temperatura com rótulos,
-  Vento, Nuvens), busca + °F + modo escuro, "Consultando…" com INMET e qualidade do ar lentos e a tela inicial. Leva
+  Vento, Nuvens), busca + °F + modo escuro, favoritos com selo (a cópia do INMET tem as datas movidas para hoje em
+  `alertasDeHoje`) e cards dentro da largura da tela (compara com a largura configurada, não com `innerWidth`: no modo
+  celular o Chrome alarga a janela quando algo passa da tela), "Consultando…" com INMET e qualidade do ar lentos e a tela inicial. Leva
   ~20 s. Foi o teste que achou o `<header>` dentro da janela do dia (vira um segundo "banner" para leitores de tela; agora
   é `<div class="modal-cabecalho">`).
 - **Previsão offline:** `buscarPrevisao` (`servico.js`) guarda cada previsão que deu certo em `previsoesSalvas`
