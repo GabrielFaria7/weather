@@ -13,6 +13,8 @@ const UFS = {
 
 const normalizar = (texto) => String(texto ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase();
 
+export const ufDoEstado = (estado) => UFS[normalizar(estado)] ?? null;
+
 export function noBrasil({ latitude, longitude }) {
   const { sul, norte, oeste, leste } = LIMITES_BRASIL;
   return latitude >= sul && latitude <= norte && longitude >= oeste && longitude <= leste;
@@ -47,7 +49,7 @@ export function pontoNaArea(latitude, longitude, geometria) {
 }
 
 export function municipioNaLista(local, municipios) {
-  const uf = UFS[normalizar(local.estado)];
+  const uf = ufDoEstado(local.estado);
   if (!uf || !local.nome || !municipios) return false;
   const lista = `,${normalizar(municipios).replace(/,\s*/g, ",")}`;
   return lista.includes(`,${normalizar(local.nome)} - ${uf.toLowerCase()} (`);

@@ -1,0 +1,41 @@
+{
+ "estacao": {
+  "UF": "RJ",
+  "CODIGO": "A636",
+  "LONGITUDE": "-43.40277777",
+  "REGIAO": "SE",
+  "DISTANCIA_EM_KM": "6",
+  "NOME": "RIO DE JANEIRO - JACAREPAGUÁ",
+  "LATITUDE": "-22.93999999",
+  "GEOCODE": "3304557"
+ },
+ "dados": {
+  "DC_NOME": "RIO DE JANEIRO - JACAREPAGUÁ",
+  "PRE_INS": "1009.4",
+  "TEM_SEN": "29.3",
+  "VL_LATITUDE": "-22.93999999",
+  "PRE_MAX": "1009.4",
+  "UF": "RJ",
+  "RAD_GLO": "1377.8",
+  "PTO_INS": "21.9",
+  "TEM_MIN": "25.7",
+  "VL_LONGITUDE": "-43.40277777",
+  "UMD_MIN": "69",
+  "PTO_MAX": "22.8",
+  "VEN_DIR": "66",
+  "DT_MEDICAO": "2026-11-04",
+  "CHUVA": "0",
+  "PRE_MIN": "1009",
+  "UMD_MAX": "77",
+  "VEN_VEL": "0.1",
+  "PTO_MIN": "20.7",
+  "TEM_MAX": "27.3",
+  "TEN_BAT": "13.3",
+  "VEN_RAJ": "2.6",
+  "TEM_CPU": "26",
+  "TEM_INS": "27.3",
+  "UMD_INS": "73",
+  "CD_ESTACAO": "A636",
+  "HR_MEDICAO": "1100"
+ }
+}

@@ -1,0 +1,20 @@
+[
+ {
+  "id": "Curitiba-PR",
+  "label": "Curitiba-PR",
+  "value": "Curitiba-PR",
+  "custom": "PR-Curitiba",
+  "geocode": 4106902,
+  "latitude": "-25.47713976061419",
+  "longitude": "-49.287871877973544"
+ },
+ {
+  "id": "Curitibanos-SC",
+  "label": "Curitibanos-SC",
+  "value": "Curitibanos-SC",
+  "custom": "SC-Curitibanos",
+  "geocode": 4204806,
+  "latitude": "-27.293718286744095",
+  "longitude": "-50.6172317986435"
+ }
+]

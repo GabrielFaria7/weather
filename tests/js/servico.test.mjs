@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, test } from "node:test";
 import {
   buscarCidades, buscarHorariosSatelite, buscarPrevisao, buscarGradeMapa, ultimosHorarios, urlTileSatelite,
@@ -193,13 +194,63 @@ test("previsão completa monta o painel no navegador", async () => {
     ? { corpo: { current: { european_aqi: 55, pm2_5: 9, pm10: 15, ozone: 60, nitrogen_dioxide: 8 } } }
     : url.hostname.endsWith("inmet.gov.br") ? { corpo: { hoje: [], futuro: [] } } : { corpo: previsaoFalsa() }));
   const painel = await buscarPrevisao({ nome: "Manaus", estado: "Amazonas", pais: "Brasil", latitude: -3.1, longitude: -60 });
-  assert.deepEqual(pedidos.map((p) => p.hostname).sort(), [
+  assert.deepEqual([...new Set(pedidos.map((p) => p.hostname))].sort(), [
     "air-quality-api.open-meteo.com", "api.open-meteo.com", "apiprevmet3.inmet.gov.br", "marine-api.open-meteo.com",
   ]);
   assert.deepEqual(painel.alertas_oficiais, []);
   assert.equal(painel.local.nome, "Manaus");
   assert.equal(painel.qualidade_ar.nivel, "Moderada");
   assert.equal(painel.por_hora.length, 24);
+});
+
+const lerDados = (nome) => JSON.parse(readFileSync(new URL(`dados/${nome}`, import.meta.url), "utf8"));
+const CURITIBA = { nome: "Curitiba", estado: "Paraná", pais: "Brasil", latitude: -25.42778, longitude: -49.27306 };
+
+function respostasDoInmetEmCuritiba(url) {
+  if (url.pathname.startsWith("/autocomplete/")) return { corpo: lerDados("inmet-autocomplete-curitiba.json") };
+  if (url.pathname === "/estacao/proxima/4106902") return { corpo: lerDados("inmet-estacao-curitiba-2026-11-04.json") };
+  if (url.pathname === "/previsao/4106902") return { corpo: lerDados("inmet-previsao-curitiba-2026-11-04.json") };
+  if (url.hostname.endsWith("inmet.gov.br")) return { corpo: { hoje: [], futuro: [] } };
+  return { corpo: previsaoFalsa() };
+}
+
+test("no Brasil, o agora usa a estação do INMET e a previsão oficial vem junto", async () => {
+  simularFetch(respostasDoInmetEmCuritiba);
+  const painel = await buscarPrevisao(CURITIBA, { agora: Date.parse("2026-11-04T11:45:00Z") });
+  const caminhos = pedidos.filter((p) => p.hostname.endsWith("inmet.gov.br")).map((p) => decodeURIComponent(p.pathname)).sort();
+  assert.deepEqual(caminhos, ["/autocomplete/Curitiba", "/avisos/ativos", "/estacao/proxima/4106902", "/previsao/4106902"]);
+  assert.equal(painel.estacao.nome, "Curitiba");
+  assert.equal(painel.atual.temperatura, 19.2);
+  assert.equal(painel.atual.umidade, 92);
+  assert.equal(painel.atual.descricao, "Nublado");
+  assert.equal(painel.previsao_inmet.municipio, "Curitiba (PR)");
+  assert.equal(painel.previsao_inmet.dias[0].periodos.length, 3);
+});
+
+test("estação antiga fica de fora, mas a previsão oficial continua", async () => {
+  simularFetch(respostasDoInmetEmCuritiba);
+  const painel = await buscarPrevisao({ ...CURITIBA, latitude: -25.428 }, { agora: Date.parse("2026-11-04T18:00:00Z") });
+  assert.equal(painel.estacao, null);
+  assert.equal(painel.atual.temperatura, 29.4);
+  assert.equal(painel.atual.descricao, "Chuva leve");
+  assert.ok(painel.previsao_inmet.dias.length);
+});
+
+test("fora do Brasil não consulta o INMET", async () => {
+  simularFetch(respostasDoInmetEmCuritiba);
+  const painel = await buscarPrevisao({ nome: "Lisboa", estado: "Lisboa", pais: "Portugal", latitude: 38.72, longitude: -9.13 });
+  assert.ok(!pedidos.some((p) => p.hostname.endsWith("inmet.gov.br")));
+  assert.equal(painel.estacao, undefined);
+  assert.equal(painel.previsao_inmet, undefined);
+});
+
+test("se o INMET falhar, a previsão aparece só com a Open-Meteo", async () => {
+  simularFetch((url) => (url.hostname.endsWith("inmet.gov.br") ? { status: 503 } : { corpo: previsaoFalsa() }));
+  const painel = await buscarPrevisao({ nome: "Londrina", estado: "Paraná", pais: "Brasil", latitude: -23.31, longitude: -51.16 });
+  assert.equal(painel.estacao, null);
+  assert.equal(painel.previsao_inmet, null);
+  assert.equal(painel.alertas_oficiais, null);
+  assert.equal(painel.atual.temperatura, 29.4);
 });
 
 test("dados do mar vêm junto e a falha deles não impede a previsão", async () => {

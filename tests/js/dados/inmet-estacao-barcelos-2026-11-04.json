@@ -1,0 +1,41 @@
+{
+ "estacao": {
+  "UF": "AM",
+  "CODIGO": "A128",
+  "LONGITUDE": "-62.92416666",
+  "REGIAO": "N",
+  "DISTANCIA_EM_KM": "81",
+  "NOME": "BARCELOS",
+  "LATITUDE": "-0.98722221",
+  "GEOCODE": "1300409"
+ },
+ "dados": {
+  "DC_NOME": "BARCELOS",
+  "PRE_INS": "1007.3",
+  "TEM_SEN": "28.4",
+  "VL_LATITUDE": "-0.98722221",
+  "PRE_MAX": "1007.3",
+  "UF": "AM",
+  "RAD_GLO": "93.6",
+  "PTO_INS": "24",
+  "TEM_MIN": "24.8",
+  "VL_LONGITUDE": "-62.92416666",
+  "UMD_MIN": "95",
+  "PTO_MAX": "24",
+  "VEN_DIR": null,
+  "DT_MEDICAO": "2026-11-04",
+  "CHUVA": null,
+  "PRE_MIN": "1006.4",
+  "UMD_MAX": "95",
+  "VEN_VEL": "0.7",
+  "PTO_MIN": "23.9",
+  "TEM_MAX": "25",
+  "TEN_BAT": "12.7",
+  "VEN_RAJ": "1.5",
+  "TEM_CPU": "26",
+  "TEM_INS": "25",
+  "UMD_INS": "95",
+  "CD_ESTACAO": "A128",
+  "HR_MEDICAO": "1100"
+ }
+}

@@ -3,6 +3,8 @@ import { crc32, deflateSync } from "node:zlib";
 
 const DADOS = new URL("../js/dados/", import.meta.url);
 const INMET = JSON.parse(readFileSync(new URL("inmet-avisos-2026-11-01.json", DADOS), "utf8"));
+const ESTACAO_RIO = JSON.parse(readFileSync(new URL("inmet-estacao-rio-2026-11-04.json", DADOS), "utf8"));
+const PREVISAO_INMET = JSON.parse(readFileSync(new URL("inmet-previsao-curitiba-2026-11-04.json", DADOS), "utf8"));
 const QUALIDADE_DO_AR = readFileSync(new URL("open-meteo-ar-sao-paulo-2026-11-01.json", DADOS), "utf8");
 const DESLOCAMENTO = -10800;
 const HORA_MS = 3600 * 1000;
@@ -132,6 +134,45 @@ function alertasDeHoje(agora = Date.now()) {
   return { ...INMET, hoje: ajustar(INMET.hoje ?? []), futuro: ajustar(INMET.futuro ?? []) };
 }
 
+const MUNICIPIOS = [
+  { nome: "Rio de Janeiro", uf: "RJ", geocode: 3304557, latitude: "-22.925", longitude: "-43.457" },
+  { nome: "São Paulo", uf: "SP", geocode: 3550308, latitude: "-23.649", longitude: "-46.648" },
+  { nome: "Curitiba", uf: "PR", geocode: 4106902, latitude: "-25.477", longitude: "-49.287" },
+  { nome: "Londrina", uf: "PR", geocode: 4113700, latitude: "-23.304", longitude: "-51.169" },
+];
+
+function municipiosDeTeste(nome) {
+  return MUNICIPIOS.filter((m) => m.nome.toLowerCase().startsWith(nome.toLowerCase())).map((m) => ({
+    id: `${m.nome}-${m.uf}`, label: `${m.nome}-${m.uf}`, value: `${m.nome}-${m.uf}`, geocode: m.geocode, latitude: m.latitude, longitude: m.longitude,
+  }));
+}
+
+function estacaoDeTeste(agora = Date.now()) {
+  const medicao = new Date(Math.floor((agora - HORA_MS) / HORA_MS) * HORA_MS).toISOString();
+  return {
+    estacao: ESTACAO_RIO.estacao,
+    dados: { ...ESTACAO_RIO.dados, DT_MEDICAO: medicao.slice(0, 10), HR_MEDICAO: medicao.slice(11, 13) + "00" },
+  };
+}
+
+function previsaoInmetDeTeste(geocode, agora = Date.now()) {
+  const dias = Object.values(PREVISAO_INMET["4106902"]);
+  const hoje = Date.parse(isoLocal(agora).slice(0, 10));
+  const porData = Object.fromEntries(dias.map((conteudo, i) => {
+    const [a, m, d] = new Date(hoje + i * 24 * HORA_MS).toISOString().slice(0, 10).split("-");
+    return [`${d}/${m}/${a}`, conteudo];
+  }));
+  return { [geocode]: porData };
+}
+
+function respostaDoInmet(url) {
+  const caminho = decodeURIComponent(new URL(url).pathname);
+  if (caminho.startsWith("/autocomplete/")) return municipiosDeTeste(caminho.slice("/autocomplete/".length));
+  if (caminho.startsWith("/estacao/proxima/")) return estacaoDeTeste();
+  if (caminho.startsWith("/previsao/")) return previsaoInmetDeTeste(caminho.slice("/previsao/".length));
+  return alertasDeHoje();
+}
+
 const comCors = { "access-control-allow-origin": "*" };
 const json = (corpo) => ({ status: 200, contentType: "application/json", headers: comCors, body: typeof corpo === "string" ? corpo : JSON.stringify(corpo) });
 const png = (dados) => ({ status: 200, contentType: "image/png", headers: comCors, body: dados });
@@ -154,7 +195,7 @@ export async function simularServicos(contexto, { atrasoComplementosMs = 0 } = {
   await contexto.route("https://marine-api.open-meteo.com/**", (rota) => rota.fulfill(json(MAR)));
   await contexto.route("https://apiprevmet3.inmet.gov.br/**", async (rota) => {
     await atrasar();
-    await rota.fulfill(json(alertasDeHoje()));
+    await rota.fulfill(json(respostaDoInmet(rota.request().url())));
   });
   await contexto.route("https://gibs.earthdata.nasa.gov/**", (rota) => (rota.request().url().endsWith(".xml")
     ? rota.fulfill(xml(`<Domains><Domain>${horariosDeSatelite()}</Domain></Domains>`))

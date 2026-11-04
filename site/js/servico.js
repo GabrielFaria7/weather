@@ -1,5 +1,8 @@
 import { alertasOficiaisPara, noBrasil } from "./alertasOficiais.js";
 import { descrever } from "./descricoes.js";
+import {
+  cidadesProximas, combinarComObservacao, escolherMunicipio, lerObservacao, lerPrevisaoInmet, nomeEspecifico,
+} from "./inmet.js";
 import { montarPainel } from "./painel.js";
 import { previsoesSalvas } from "./preferencias.js";
 import { blocosDaArea, cidadeDoBloco } from "./rotulosMapa.js";
@@ -8,7 +11,8 @@ const URL_GEOCODIFICACAO = "https://geocoding-api.open-meteo.com/v1/search";
 const URL_PREVISAO = "https://api.open-meteo.com/v1/forecast";
 const URL_QUALIDADE_AR = "https://air-quality-api.open-meteo.com/v1/air-quality";
 const URL_MAR = "https://marine-api.open-meteo.com/v1/marine";
-const URL_ALERTAS_INMET = "https://apiprevmet3.inmet.gov.br/avisos/ativos";
+const URL_INMET = "https://apiprevmet3.inmet.gov.br";
+const URL_ALERTAS_INMET = `${URL_INMET}/avisos/ativos`;
 const TEMPO_LIMITE_MS = 10000;
 const PASSO_GRADE_MAPA = 0.5;
 const PASSOS_POR_LADO = 6;
@@ -22,6 +26,9 @@ const JANELA_SATELITE_MS = 4 * 60 * 60 * 1000;
 const VALIDADE_PREVISAO_SALVA_MS = 7 * 24 * 60 * 60 * 1000;
 const VALIDADE_CLIMA_ATUAL_MS = 10 * 60 * 1000;
 const VALIDADE_ALERTAS_MS = 5 * 60 * 1000;
+const VALIDADE_OBSERVACAO_MS = 10 * 60 * 1000;
+const VALIDADE_PREVISAO_INMET_MS = 30 * 60 * 1000;
+const RAIO_CIDADE_PROXIMA_GRAUS = 0.4;
 const ESPERA_COMPLEMENTOS_MS = 400;
 
 const POLUENTES = "pm10,pm2_5,ozone,nitrogen_dioxide,sulphur_dioxide,carbon_monoxide";
@@ -301,6 +308,79 @@ export async function buscarAlertasOficiais(local, opcoes) {
   return alertas;
 }
 
+const respostasDoInmet = new Map();
+const municipiosDoInmet = new Map();
+
+async function lerDoInmet(caminho, { signal, agora = Date.now() } = {}, validade = Infinity) {
+  const guardado = respostasDoInmet.get(caminho);
+  if (guardado && agora - guardado.quando < validade) return guardado.dados;
+  const resposta = await fetch(`${URL_INMET}/${caminho}`, { signal: sinalComLimite(signal) });
+  if (!resposta.ok) throw new Error(`O INMET respondeu com o código ${resposta.status}.`);
+  const dados = await resposta.json();
+  respostasDoInmet.set(caminho, { quando: agora, dados });
+  return dados;
+}
+
+const municipiosComONome = (nome, opcoes) => lerDoInmet(`autocomplete/${encodeURIComponent(nome)}`, opcoes);
+
+async function procurarMunicipio(local, opcoes) {
+  if (nomeEspecifico(local)) {
+    const achado = escolherMunicipio(await municipiosComONome(local.nome, opcoes), local);
+    if (achado) return achado;
+  }
+  const raio = RAIO_CIDADE_PROXIMA_GRAUS;
+  const cidades = await buscarCidadesDaArea({
+    sul: local.latitude - raio, norte: local.latitude + raio, oeste: local.longitude - raio, leste: local.longitude + raio,
+  }, opcoes);
+  for (const cidade of cidadesProximas(cidades, local)) {
+    const achado = escolherMunicipio(await municipiosComONome(cidade.nome, opcoes), { ...local, nome: cidade.nome });
+    if (achado) return achado;
+  }
+  return null;
+}
+
+function municipioDoInmet(local, opcoes) {
+  const chave = `${chaveDoLocal(local)}|${local.nome ?? ""}|${local.estado ?? ""}`;
+  if (!municipiosDoInmet.has(chave)) {
+    const pedido = procurarMunicipio(local, opcoes);
+    pedido.catch(() => municipiosDoInmet.delete(chave));
+    municipiosDoInmet.set(chave, pedido);
+  }
+  return municipiosDoInmet.get(chave);
+}
+
+export async function buscarDadosDoInmet(local, opcoes = {}) {
+  if (!noBrasil(local)) return { estacao: undefined, previsao: undefined, geocode: null };
+  let municipio = null;
+  try {
+    municipio = await municipioDoInmet(local, opcoes);
+  } catch (erro) {
+    if (erro.name === "AbortError") throw erro;
+  }
+  if (!municipio) return { estacao: null, previsao: null, geocode: null };
+  const [estacao, previsao] = await Promise.allSettled([
+    lerDoInmet(`estacao/proxima/${municipio.geocode}`, opcoes, VALIDADE_OBSERVACAO_MS),
+    lerDoInmet(`previsao/${municipio.geocode}`, opcoes, VALIDADE_PREVISAO_INMET_MS),
+  ]);
+  return {
+    estacao: estacao.status === "fulfilled" ? lerObservacao(estacao.value, local, opcoes.agora) : null,
+    previsao: previsao.status === "fulfilled" ? previsao.value : null,
+    geocode: municipio.geocode,
+  };
+}
+
+function comDadosDoInmet(painel, inmet) {
+  if (!inmet) return painel;
+  const hoje = String(painel.atual.horario).slice(0, 10);
+  const previsao = inmet.previsao && lerPrevisaoInmet(inmet.previsao, inmet.geocode, hoje);
+  return {
+    ...painel,
+    atual: combinarComObservacao(painel.atual, inmet.estacao),
+    estacao: inmet.estacao,
+    previsao_inmet: inmet.previsao === undefined ? undefined : previsao ?? null,
+  };
+}
+
 function previsaoSalvaRecente(posicao) {
   const salva = previsoesSalvas.buscar(posicao);
   return salva && Date.now() - salva.quando < VALIDADE_PREVISAO_SALVA_MS ? salva : null;
@@ -310,6 +390,7 @@ export async function buscarPrevisao(local, opcoes) {
   const posicao = { latitude: local.latitude, longitude: local.longitude };
   const dadosDoLocal = { nome: local.nome, estado: local.estado, pais: local.pais, ...posicao };
   const alertasOficiais = buscarAlertasOficiais(dadosDoLocal, opcoes);
+  const dadosDoInmet = buscarDadosDoInmet(dadosDoLocal, opcoes).catch(() => ({ estacao: null, previsao: null }));
   const pedidoAr = pedirOpenMeteo(URL_QUALIDADE_AR, { ...posicao, ...PARAMETROS_QUALIDADE_AR }, opcoes)
     .then((dados) => (dados.current ? { current: dados.current, hourly: dados.hourly ?? null } : null))
     .catch(() => null);
@@ -324,23 +405,23 @@ export async function buscarPrevisao(local, opcoes) {
     return { ...painel, alertas_oficiais: await alertasOficiais, salvaEm: salva.quando, motivo: erro.message };
   }
 
-  const montar = ([ar, mar, alertas]) => {
-    const painel = montarPainel(dadosDoLocal, previsao, ar, mar);
+  const montar = ([ar, mar, alertas, inmet]) => {
+    const painel = comDadosDoInmet(montarPainel(dadosDoLocal, previsao, ar, mar), inmet);
     previsoesSalvas.guardar(posicao, previsao, ar);
     return { ...painel, alertas_oficiais: alertas };
   };
-  const complementos = Promise.all([pedidoAr, pedidoMar, alertasOficiais]);
+  const complementos = Promise.all([pedidoAr, pedidoMar, alertasOficiais, dadosDoInmet]);
   const prontos = await Promise.race([
     complementos,
     new Promise((resolver) => setTimeout(() => resolver(null), ESPERA_COMPLEMENTOS_MS)),
   ]);
   if (prontos) return montar(prontos);
   return {
-    ...montar([null, null, undefined]),
+    ...montar([null, null, undefined, null]),
     pendente: true,
     complementos: complementos.then((resultados) => {
-      const { qualidade_ar, mar, alertas_oficiais } = montar(resultados);
-      return { qualidade_ar, mar, alertas_oficiais };
+      const { atual, estacao, previsao_inmet, qualidade_ar, mar, alertas_oficiais } = montar(resultados);
+      return { atual, estacao, previsao_inmet, qualidade_ar, mar, alertas_oficiais };
     }),
   };
 }

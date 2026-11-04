@@ -15,6 +15,7 @@ import { renderizarAlertas } from "./componentes/alertas.js";
 import { renderizarFavoritos } from "./componentes/favoritos.js";
 import { renderizarLua } from "./componentes/lua.js";
 import { renderizarMar } from "./componentes/mar.js";
+import { renderizarPrevisaoInmet } from "./componentes/previsaoInmet.js";
 import { mostrarAviso, renderizarCarregando, renderizarErro, renderizarVazio } from "./componentes/estados.js";
 
 const principal = document.getElementById("conteudo");
@@ -113,7 +114,10 @@ function esperarComplementos(dados) {
 function renderizarComplementos() {
   if (!estado.dados || !area("alertas")) return;
   const ctx = contexto();
+  renderizarAtual(area("atual"), estado.dados, ctx);
   renderizarAlertas(area("alertas"), estado.dados);
+  renderizarListaFavoritos();
+  renderizarPrevisaoInmet(area("inmet"), estado.dados, ctx);
   renderizarIndicadores(area("indicadores"), estado.dados, ctx);
   renderizarQualidadeAr(area("ar"), estado.dados, ctx);
   renderizarMar(area("mar"), estado.dados, ctx);
@@ -171,6 +175,7 @@ function montarPainel() {
         <div data-area="favoritos"></div>
       </div>
       <div class="area-horas" data-area="horas"></div>
+      <div class="area-inmet" data-area="inmet" hidden></div>
       <div class="area-dias" data-area="dias"></div>
       <div class="area-indicadores" data-area="indicadores"></div>
       <div class="area-ar" data-area="ar"></div>
@@ -205,6 +210,7 @@ function renderizarConteudo() {
   renderizarAlertas(area("alertas"), estado.dados);
   renderizarListaFavoritos();
   renderizarPorHora(area("horas"), estado.dados, ctx);
+  renderizarPrevisaoInmet(area("inmet"), estado.dados, ctx);
   renderizarDias(area("dias"), estado.dados, ctx);
   renderizarIndicadores(area("indicadores"), estado.dados, ctx);
   renderizarQualidadeAr(area("ar"), estado.dados, ctx);

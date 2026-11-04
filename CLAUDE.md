@@ -33,7 +33,7 @@ node --test "tests/navegador/*.test.mjs"       # testes no Chrome (Playwright + 
 - Não há servidor próprio: o Python é só o app do terminal. `descricoes.py` continua em Python porque o terminal
   usa; a tabela de descrições existe nas duas linguagens.
 - **Lógica pura fora dos componentes:** o que não depende de Leaflet nem do DOM fica em módulos próprios
-  (`painel.js`, `avisos.js`, `atualizacao.js`, `compartilhar.js`, `iqar.js`, `lua.js`, `rotulosMapa.js`, `seriesPorHora.js`, `alertasOficiais.js`, `satelites.js`, `gradeVento.js`, `temperaturaMapa.js`, `resumo.js`, `formato.js`, `preferencias.js`, `servico.js`) e tem
+  (`painel.js`, `avisos.js`, `atualizacao.js`, `compartilhar.js`, `iqar.js`, `lua.js`, `rotulosMapa.js`, `seriesPorHora.js`, `alertasOficiais.js`, `inmet.js`, `satelites.js`, `gradeVento.js`, `temperaturaMapa.js`, `resumo.js`, `formato.js`, `preferencias.js`, `servico.js`) e tem
   teste em `tests/js/` (`node:test`; `fetch` e `localStorage` são simulados nos testes). Ao criar lógica nova,
   seguir esse padrão e escrever o teste junto.
 - **Sem build no front:** HTML/CSS/JS puros. Chart.js, Leaflet e leaflet-velocity vêm de CDN, carregados sob demanda
@@ -61,6 +61,27 @@ node --test "tests/navegador/*.test.mjs"       # testes no Chrome (Playwright + 
   alertas oficiais do INMET…". O card mostra os 2 primeiros e o resto em "Mais N alertas oficiais".
   A resposta do INMET (grande, com todos os avisos do país) fica guardada por 5 min (`respostaDoInmet`), e
   `buscarAlertasDosLugares` usa essa mesma resposta para vários lugares; só falhas não são guardadas.
+- **Estação e previsão oficial do INMET (só Brasil):** o "agora" da Open-Meteo é modelo, não medição (ex.: Curitiba,
+  04/11/2026: a Open-Meteo dizia garoa e os aeroportos e a estação A807 mediam nublado, 0 mm). O SIMEPAR foi avaliado e
+  descartado: não tem API pública e o site fica atrás do Cloudflare. METAR (aviationweather.gov), `apitempo.inmet.gov.br`
+  e IBGE (`servicodados.ibge.gov.br`) bloqueiam CORS. O que funciona pelo navegador, no mesmo host dos alertas
+  (`apiprevmet3.inmet.gov.br`, já na CSP): `autocomplete/{nome}` (código IBGE + coordenadas), `estacao/proxima/{IBGE}`
+  (última medição horária da estação automática mais próxima; `HR_MEDICAO` em UTC, vento em m/s, `PRE_INS` é pressão
+  na estação, por isso a pressão continua da Open-Meteo) e `previsao/{IBGE}` (~250 KB, com ícones em base64 que não
+  usamos; manhã/tarde/noite para 2 dias e depois só o dia). `buscarDadosDoInmet` (`servico.js`) acha o município pelo
+  nome + UF (`escolherMunicipio`); para "Sua localização", bairros ou nomes que não são município, tenta as 2 cidades do
+  GeoNames mais próximas e as 2 maiores num raio de 40 km (`cidadesProximas`; os bairros do Rio estão no GeoNames).
+  `lerObservacao` só aceita estação a até 50 km do lugar e medição de até 3 h; `combinarComObservacao` troca
+  temperatura, sensação (`TEM_SEN`), umidade, orvalho, vento, rajada e chuva pelos medidos, e corrige o código do tempo:
+  modelo com chuva/garoa e estação com < 0,2 mm vira "Nublado" (3); estação com chuva e modelo sem chuva vira chuva
+  leve/moderada/forte pelos mm (trovoada fica). O card principal diz a fonte (`fonteDoAgora`: "Medido às 08:00 na
+  estação … do INMET, a N km" ou "estimativa do modelo da Open-Meteo"). O card "Previsão oficial"
+  (`componentes/previsaoInmet.js`, linha inteira depois da previsão por hora) usa `lerPrevisaoInmet`, com ícones nossos
+  pelo texto (`codigoDoResumo`) e vento em português (`textoDoVento`: W → O). Tudo isso faz parte dos complementos:
+  enquanto não chega, aparecem "Consultando a estação do INMET mais próxima…" e "Consultando a previsão oficial…", e
+  `renderizarComplementos` redesenha o card principal, os favoritos e o card oficial. Falha do INMET nunca impede o
+  painel (`estacao`/`previsao_inmet` = `null`; `undefined` fora do Brasil). Cache: código do município pela sessão,
+  estação 10 min, previsão 30 min. Testes com cópias reais em `tests/js/dados/inmet-*` (previsão sem os ícones).
 - **Alertas nos favoritos:** `favoritos.js` pede os alertas de todas as favoritas de uma vez
   (`buscarAlertasDosLugares`, a mesma consulta do painel) e mostra embaixo do nome um selo com a cor do nível
   (`.favorito-alerta.nivel-*`), o título, quando (`em vigor`, `a partir das HH:MM`, `a partir de amanhã` ou da data,
@@ -234,7 +255,7 @@ node --test "tests/navegador/*.test.mjs"       # testes no Chrome (Playwright + 
   workflow (`npm install --no-save --no-package-lock`, versões fixas em `VERSAO_PLAYWRIGHT`/`VERSAO_AXE` no
   `testes.yml`, que o Dependabot não vê: atualizar à mão) — o projeto continua sem `package.json`. `servidor.mjs` serve
   `site/` em `/weather/` (como o Pages). `simulacao.mjs` responde **todas** as APIs e imagens externas com dados de teste
-  (previsão gerada a partir da hora atual, cópias reais de qualidade do ar e INMET em `tests/js/dados/`, grade, mar,
+  (previsão gerada a partir da hora atual, cópias reais de qualidade do ar, alertas, estação e previsão do INMET em `tests/js/dados/` com as datas movidas para agora, grade, mar,
   busca, horários de satélite e PNGs de 1 pixel): o GitHub Actions divide IPs e a Open-Meteo bloquearia por cota, o
   INMET barra quem está fora do Brasil e os satélites oscilam. Só as bibliotecas de CDN carregam de verdade (confere o
   SRI). Os contextos usam `serviceWorkers: "block"` (senão o service worker escapa da simulação) e

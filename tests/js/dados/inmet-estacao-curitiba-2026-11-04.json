@@ -1,0 +1,41 @@
+{
+ "estacao": {
+  "UF": "PR",
+  "CODIGO": "A807",
+  "LONGITUDE": "-49.23055554",
+  "REGIAO": "S",
+  "DISTANCIA_EM_KM": "7",
+  "NOME": "CURITIBA",
+  "LATITUDE": "-25.4486111",
+  "GEOCODE": "4106902"
+ },
+ "dados": {
+  "DC_NOME": "CURITIBA",
+  "PRE_INS": "908.9",
+  "TEM_SEN": "20.8",
+  "VL_LATITUDE": "-25.4486111",
+  "PRE_MAX": "909",
+  "UF": "PR",
+  "RAD_GLO": "372.9",
+  "PTO_INS": "17.8",
+  "TEM_MIN": "18.6",
+  "VL_LONGITUDE": "-49.23055554",
+  "UMD_MIN": "92",
+  "PTO_MAX": "18",
+  "VEN_DIR": "57",
+  "DT_MEDICAO": "2026-11-04",
+  "CHUVA": "0",
+  "PRE_MIN": "908.1",
+  "UMD_MAX": "94",
+  "VEN_VEL": "0.9",
+  "PTO_MIN": "17.5",
+  "TEM_MAX": "19.2",
+  "TEN_BAT": "13.3",
+  "VEN_RAJ": "4.1",
+  "TEM_CPU": "20",
+  "TEM_INS": "19.2",
+  "UMD_INS": "92",
+  "CD_ESTACAO": "A807",
+  "HR_MEDICAO": "1100"
+ }
+}

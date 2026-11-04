@@ -275,7 +275,8 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 100vh; outline: none
 .area-mapa { grid-column: span 8; }
 .area-lua, .area-mar { grid-column: span 12; container-type: inline-size; }
 .painel.com-mar .area-lua, .painel.com-mar .area-mar { grid-column: span 6; }
-.area-mar[hidden] { display: none; }
+.area-mar[hidden], .area-inmet[hidden] { display: none; }
+.area-inmet { grid-column: span 12; }
 .area-lua > *, .area-mar > * { height: 100%; }
 .area-lateral > *, .area-ar > *, .area-mapa > *, .area-dias > * { height: 100%; }
 
@@ -295,6 +296,23 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 100vh; outline: none
 .titulo-secao { margin: 0 0 12px 4px; }
 .card-dica { font-size: 12px; color: var(--texto-2); }
 .card-fonte { margin-top: 14px; font-size: 12px; color: var(--texto-2); }
+
+.inmet-dias { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+.inmet-dia {
+  grid-column: span 2; display: flex; flex-direction: column; gap: 12px; padding: 14px;
+  border-radius: var(--raio-p); background: var(--superficie-2);
+}
+.inmet-dia.com-periodos { grid-column: span 3; }
+.inmet-dia-topo { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.inmet-dia-topo h3 { font-size: 15px; font-weight: 700; }
+.inmet-dia-topo small { margin-left: 4px; font-size: 12px; font-weight: 500; color: var(--texto-2); }
+.inmet-temps { display: flex; gap: 10px; font-size: 12px; color: var(--texto-2); }
+.inmet-temps strong { font-size: 15px; color: var(--texto); }
+.inmet-periodos { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.inmet-periodo { display: flex; flex-direction: column; gap: 6px; }
+.inmet-periodo-nome { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--texto-2); }
+.inmet-resumo { font-size: 13px; line-height: 1.4; }
+.inmet-vento { margin-top: 2px; font-size: 12px; color: var(--texto-2); }
 
 .lua-corpo { display: flex; flex-direction: column; gap: 16px; }
 .lua-topo { display: flex; align-items: center; gap: 16px; }
@@ -357,6 +375,8 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 100vh; outline: none
   border: 0; background: none; font: inherit; font-size: 12px; color: var(--texto-2); cursor: pointer;
 }
 .atual-atualizado .ui-icone { width: 13px; height: 13px; }
+.atual-fonte { display: flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 12px; color: var(--texto-2); }
+.atual-fonte .ui-icone { width: 13px; height: 13px; flex: none; }
 .atual-atualizado:hover { color: var(--texto); }
 .atual-atualizado.atualizando .ui-icone { animation: girar 1s linear infinite; }
 
@@ -784,6 +804,18 @@ main { padding-top: 24px; padding-bottom: 32px; min-height: 100vh; outline: none
   .indicadores-grade { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .area-ar { grid-column: span 5; }
   .area-mapa { grid-column: span 7; }
+}
+
+@media (max-width: 1024px) {
+  .inmet-dia.com-periodos { grid-column: span 6; }
+}
+
+@media (max-width: 760px) {
+  .inmet-dias { grid-template-columns: minmax(0, 1fr); }
+  .inmet-dia, .inmet-dia.com-periodos { grid-column: auto; }
+  .inmet-periodos { grid-auto-flow: row; }
+  .inmet-periodo { flex-direction: row; align-items: flex-start; gap: 12px; }
+  .inmet-periodo .clima-icone { flex: none; }
 }
 
 @media (max-width: 760px) {

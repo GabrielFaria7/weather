@@ -1,6 +1,7 @@
 import { textoAtualizacao } from "../atualizacao.js";
 import { agoraNaCidade, direcao, esc, nomeCompleto, porcentagem, temperatura, vento } from "../formato.js";
 import { classeFundo, iconeClima, iconeUI } from "../icones.js";
+import { fonteDoAgora } from "../inmet.js";
 import { comparacaoComOntem, resumoDoDia } from "../resumo.js";
 
 export function renderizarAtual(el, dados, ctx) {
@@ -20,6 +21,7 @@ export function renderizarAtual(el, dados, ctx) {
           <button class="atual-atualizado" type="button" data-acao="atualizar" title="Atualizar a previsão agora">
             ${iconeUI("recarregar")}<span data-atualizado>${esc(textoAtualizacao(ctx.atualizadoEm))}</span>
           </button>
+          <p class="atual-fonte${dados.estacao ? " medido" : ""}">${iconeUI(dados.estacao ? "pino" : "nuvem")}<span>${esc(fonteDoAgora(dados, ctx.hora))}</span></p>
         </div>
         <div class="atual-acoes">
           <button class="btn-compartilhar" type="button" data-acao="compartilhar"

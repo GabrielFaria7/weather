@@ -98,6 +98,15 @@ Com o painel aberto, a previsão se atualiza sozinha a cada 15 minutos (o card p
 > **Alertas:** para cidades do Brasil, o painel mostra os **alertas oficiais do INMET** (avisos ativos da área da
 > cidade, com severidade, período, riscos e o que fazer). Abaixo deles ficam os alertas **automáticos**, calculados
 > a partir da previsão, que **não são oficiais**.
+>
+> **Tempo de agora medido (Brasil):** o "agora" da Open-Meteo é uma estimativa de modelo e às vezes diz que está
+> chovendo quando não está. Para cidades do Brasil, o card principal usa a **estação automática do INMET mais
+> próxima** (até 50 km, medição de até 3 h atrás): temperatura, sensação, umidade, vento e chuva da última hora.
+> Se a estação mediu 0 mm, o card não diz que está chovendo. A linha "Medido às 08:00 na estação Curitiba do INMET,
+> a 5 km" mostra de onde vem o número; sem estação perto, aparece "estimativa do modelo da Open-Meteo".
+>
+> **Previsão oficial (Brasil):** um card com a previsão dos meteorologistas do INMET para o município: manhã, tarde
+> e noite de hoje e amanhã, e mais três dias. A previsão por hora e a de 10 dias continuam vindo da Open-Meteo.
 > No **mapa**, a camada **Temperatura** mostra a previsão da Open-Meteo das próximas 24 horas como mapa de calor,
 > ajustada à altitude de cada ponto do relevo (AWS Terrain Tiles), para serras e vales aparecerem, com os nomes e as
 > temperaturas das cidades (lista do GeoNames); ao arrastar o mapa para longe, a área nova é carregada. A camada
@@ -183,6 +192,7 @@ A cada push no `main` (e em cada pull request), o GitHub Actions roda os três s
 | `site/js/seriesPorHora.js` | Prepara os gráficos da previsão por hora (temperatura, chuva e vento) |
 | `site/js/iqar.js` | Calcula o índice brasileiro de qualidade do ar (IQAr, CONAMA 506/2024) |
 | `site/js/alertasOficiais.js` | Escolhe os alertas oficiais do INMET que valem para a cidade |
+| `site/js/inmet.js` | Acha o município do INMET, lê a estação mais próxima e a previsão oficial |
 | `site/js/descricoes.js` | Traduz o código do tempo para português |
 | `site/js/satelites.js` | Escolhe o satélite das nuvens pela região e deixa só as nuvens visíveis na imagem |
 | `site/js/gradeVento.js` | Converte a grade de vento para o formato da animação e acha o ponto sob o mouse |

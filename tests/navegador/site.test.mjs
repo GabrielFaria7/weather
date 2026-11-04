@@ -88,6 +88,9 @@ for (const modo of Object.keys(MODOS)) {
     await esperarComplementos(pagina);
     assert.match(await pagina.locator("[data-area='alertas']").innerText(), /INMET/);
     assert.match(await pagina.locator("#qualidade-ar").innerText(), /IQAr/);
+    assert.match(await pagina.locator(".atual-fonte").innerText(), /na estação Rio de Janeiro - Jacarepaguá do INMET, a 23 km/);
+    assert.equal(await pagina.locator("#previsao-oficial .inmet-dia").count(), 5);
+    assert.match(await pagina.locator("#previsao-oficial").textContent(), /Hoje[\s\S]*Manhã[\s\S]*Amanhã/);
     assert.ok(await pagina.evaluate(() => document.fonts.check("16px Inter")), "a fonte Inter do site não carregou");
 
     await pagina.locator("#por-hora").scrollIntoViewIfNeeded();
@@ -167,6 +170,7 @@ test("busca de cidade, °F e modo escuro", TEMPO, async () => {
   await pagina.click("#btn-tema");
   assert.equal(await pagina.evaluate(() => document.documentElement.dataset.theme), "dark");
   await esperarComplementos(pagina);
+  assert.match(await pagina.locator(".atual-fonte").innerText(), /estimativa do modelo/);
   await semProblemasDeAcessibilidade(pagina, "São Paulo em °F no modo escuro");
 
   assert.deepEqual(problemas, []);
@@ -178,9 +182,13 @@ test("o painel aparece antes dos alertas e da qualidade do ar quando eles demora
   await pagina.waitForSelector("#atual-local", { timeout: 3500 });
   assert.match(await pagina.locator("[data-area='alertas']").innerText(), /Consultando os alertas oficiais do INMET/);
   assert.match(await pagina.locator("#qualidade-ar").innerText(), /Consultando a qualidade do ar/);
+  assert.match(await pagina.locator(".atual-fonte").innerText(), /Consultando a estação do INMET/);
+  assert.match(await pagina.locator("#previsao-oficial").innerText(), /Consultando a previsão oficial do INMET/);
   await semProblemasDeAcessibilidade(pagina, "painel consultando");
   await esperarComplementos(pagina);
   assert.match(await pagina.locator("#qualidade-ar").innerText(), /IQAr/);
+  assert.match(await pagina.locator(".atual-fonte").innerText(), /^Medido às/);
+  assert.equal(await pagina.locator("#previsao-oficial .inmet-dia").count(), 5);
 
   assert.deepEqual(problemas, []);
   await contexto.close();
